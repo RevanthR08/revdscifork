@@ -1,0 +1,966 @@
+{
+  "dataset_id": "dataset6",
+  "file_name": "windows_soc_data_6_4379.csv",
+  "ai_summary_report": "\n🔐 AI FORENSIC ANALYSIS REPORT\n\n📌 1. Report Metadata\n| Field | Value |\n|-------|-------|\n| Dataset | windows_soc_data_6_4379.csv |\n| Generated On | 2026-04-06 11:43:31 UTC |\n| Risk Level | 🟠 HIGH (55%) |\n| Total Logs | 10,000 |\n| Threat Events | 30 |\n| Attack Chains | 2 |\n| Affected Hosts | 2 |\n| Affected Users | 4 |\n\n🧠 2. Executive Summary\nA significant threat campaign was detected.\nPrimary attack vector: Data Exfiltration via C2 (T1048)\nAttack observed across:\n- WIN-SOC-PROD-01\n- WIN-SOC-PROD-02\nImmediate response is required.\n\n⏱️ 3. Attack Timeline\n| Time (UTC) | Host | Event Description |\n|------------|------|-------------------|\n| 2026-04-02 00:18:03 | WIN-SOC-PROD-01 | Encoded IEX Download |\n| 2026-04-02 00:18:04 | WIN-SOC-PROD-01 | Encoded IEX Download |\n| 2026-04-02 00:18:05 | WIN-SOC-PROD-01 | Encoded IEX Download |\n| 2026-04-02 00:18:06 | WIN-SOC-PROD-01 | Encoded IEX Download |\n| 2026-04-02 00:18:07 | WIN-SOC-PROD-01 | Encoded IEX Download |\n\n🧩 4. Attack Chain\nInitial Access (Suspicious Payload)\n      ↓\nExecution (Data Exfiltration via C2)\n      ↓\nPersistence/Lateral Development\n      ↓\nTarget Objective (Logon/Access)\n\n⚙️ 5. Technical Details\n| Category | Details |\n|----------|---------|\n| Process | powershell.exe |\n| Technique | Encoded IEX Download |\n| MITRE ID | T1048 |\n| CPU Usage | 28–32% |\n| Memory Usage | 440–460 MB |\n| Network I/O | 14–17 MB/s |\n\n🎯 6. MITRE ATT&CK Mapping\n| Technique ID | Name | Description |\n|--------------|------|-------------|\n| T1048 | Data Exfiltration via C2 | Abnormal outbound network traffic matching known Command and Control (C2) patterns, suggesting the removal of internal sensitive data to an external server. |\n| T1105 | Ingress Tool Transfer | Payload downloaded from remote server |\n| T1071 | Application Layer Protocol | C2 communication |\n\n🚨 7. Findings Summary\n| Severity | Finding | Count |\n|----------|---------|-------|\n| 🟠 HIGH | Data Exfiltration via C2 | 30 |\n| 🟠 HIGH | Anomalous Process Behavior (ML) | 15 |\n| 🟡 MEDIUM | High-Frequency Event Burst | 10 |\n\n🖥️ 8. Affected Entities\n**Hosts**\nWIN-SOC-PROD-01\nWIN-SOC-PROD-02\n\n**Users**\nNT AUTHORITY\\SYSTEM\nWIN-SOC\\Dev-01\nWIN-SOC\\User1\nWIN-SOC\\Admin\n\n🛡️ 9. Recommendations\n- Block Data Exfiltration via C2 execution patterns\n- Enable Advanced Script Block Logging\n- Isolate affected hosts immediately: [WIN-SOC-PROD-01, WIN-SOC-PROD-02]\n- Monitor outbound traffic for C2 patterns\n- Deploy EDR rules for detection\n\n📊 10. Risk Assessment\nOverall Risk Score: 55% (HIGH)\n\nImpact      : HIGH\nLikelihood  : HIGH\nSeverity    : HIGH\n",
+  "summary": {
+    "scan_id": "ds-006",
+    "risk_score": 5500,
+    "threat_level": "🟠 HIGH",
+    "executive_summary": "A significant threat campaign was detected.\nPrimary attack vector: Data Exfiltration via C2 (T1048)\nAttack observed across:\n- WIN-SOC-PROD-01\n- WIN-SOC-PROD-02\nImmediate response is required."
+  },
+  "findings": {
+    "summary": {
+      "total_logs": 10000,
+      "attacked_logs_count": 30,
+      "primary_threat": "Data Exfiltration via C2",
+      "severity": "critical",
+      "risk_score": 5500
+    },
+    "attacked_logs": [
+      {
+        "id": "fnd-ds-006-log-1",
+        "timestamp": "2026-04-02 00:18:03",
+        "event_id": "4688",
+        "level": "Warning",
+        "source": "Security",
+        "computer": "WIN-SOC-PROD-01",
+        "user": "NT AUTHORITY\\SYSTEM",
+        "opcode": "Exec",
+        "task_category": "Process Creation",
+        "process_id": "9898",
+        "process_name": "powershell.exe",
+        "detail": "Encoded IEX Download",
+        "cpu_usage": "30.0",
+        "mem_usage": "450",
+        "network_io": "15.0",
+        "integrity_level": "Medium",
+        "is_signed": "1",
+        "label": "suspicious",
+        "mitre_mapping": {
+          "technique": "Data Exfiltration via C2",
+          "id": "T1048",
+          "tactic": "Exfiltration"
+        }
+      },
+      {
+        "id": "fnd-ds-006-log-2",
+        "timestamp": "2026-04-02 00:18:04",
+        "event_id": "4688",
+        "level": "Warning",
+        "source": "Security",
+        "computer": "WIN-SOC-PROD-01",
+        "user": "WIN-SOC\\Dev-01",
+        "opcode": "Exec",
+        "task_category": "Process Creation",
+        "process_id": "3535",
+        "process_name": "powershell.exe",
+        "detail": "Encoded IEX Download",
+        "cpu_usage": "30.0",
+        "mem_usage": "450",
+        "network_io": "15.0",
+        "integrity_level": "Medium",
+        "is_signed": "1",
+        "label": "suspicious",
+        "mitre_mapping": {
+          "technique": "Data Exfiltration via C2",
+          "id": "T1048",
+          "tactic": "Exfiltration"
+        }
+      },
+      {
+        "id": "fnd-ds-006-log-3",
+        "timestamp": "2026-04-02 00:18:05",
+        "event_id": "4688",
+        "level": "Warning",
+        "source": "Security",
+        "computer": "WIN-SOC-PROD-01",
+        "user": "NT AUTHORITY\\SYSTEM",
+        "opcode": "Exec",
+        "task_category": "Process Creation",
+        "process_id": "2466",
+        "process_name": "powershell.exe",
+        "detail": "Encoded IEX Download",
+        "cpu_usage": "30.0",
+        "mem_usage": "450",
+        "network_io": "15.0",
+        "integrity_level": "Medium",
+        "is_signed": "1",
+        "label": "suspicious",
+        "mitre_mapping": {
+          "technique": "Data Exfiltration via C2",
+          "id": "T1048",
+          "tactic": "Exfiltration"
+        }
+      },
+      {
+        "id": "fnd-ds-006-log-4",
+        "timestamp": "2026-04-02 00:18:06",
+        "event_id": "4688",
+        "level": "Warning",
+        "source": "Security",
+        "computer": "WIN-SOC-PROD-01",
+        "user": "WIN-SOC\\Dev-01",
+        "opcode": "Exec",
+        "task_category": "Process Creation",
+        "process_id": "918",
+        "process_name": "powershell.exe",
+        "detail": "Encoded IEX Download",
+        "cpu_usage": "30.0",
+        "mem_usage": "450",
+        "network_io": "15.0",
+        "integrity_level": "Medium",
+        "is_signed": "1",
+        "label": "suspicious",
+        "mitre_mapping": {
+          "technique": "Data Exfiltration via C2",
+          "id": "T1048",
+          "tactic": "Exfiltration"
+        }
+      },
+      {
+        "id": "fnd-ds-006-log-5",
+        "timestamp": "2026-04-02 00:18:07",
+        "event_id": "4688",
+        "level": "Warning",
+        "source": "Security",
+        "computer": "WIN-SOC-PROD-01",
+        "user": "WIN-SOC\\User1",
+        "opcode": "Exec",
+        "task_category": "Process Creation",
+        "process_id": "3175",
+        "process_name": "powershell.exe",
+        "detail": "Encoded IEX Download",
+        "cpu_usage": "30.0",
+        "mem_usage": "450",
+        "network_io": "15.0",
+        "integrity_level": "Medium",
+        "is_signed": "1",
+        "label": "suspicious",
+        "mitre_mapping": {
+          "technique": "Data Exfiltration via C2",
+          "id": "T1048",
+          "tactic": "Exfiltration"
+        }
+      },
+      {
+        "id": "fnd-ds-006-log-6",
+        "timestamp": "2026-04-02 00:18:08",
+        "event_id": "4688",
+        "level": "Warning",
+        "source": "Security",
+        "computer": "WIN-SOC-PROD-01",
+        "user": "WIN-SOC\\User1",
+        "opcode": "Exec",
+        "task_category": "Process Creation",
+        "process_id": "113",
+        "process_name": "powershell.exe",
+        "detail": "Encoded IEX Download",
+        "cpu_usage": "30.0",
+        "mem_usage": "450",
+        "network_io": "15.0",
+        "integrity_level": "Medium",
+        "is_signed": "1",
+        "label": "suspicious",
+        "mitre_mapping": {
+          "technique": "Data Exfiltration via C2",
+          "id": "T1048",
+          "tactic": "Exfiltration"
+        }
+      },
+      {
+        "id": "fnd-ds-006-log-7",
+        "timestamp": "2026-04-02 00:18:09",
+        "event_id": "4688",
+        "level": "Warning",
+        "source": "Security",
+        "computer": "WIN-SOC-PROD-02",
+        "user": "WIN-SOC\\User1",
+        "opcode": "Exec",
+        "task_category": "Process Creation",
+        "process_id": "5782",
+        "process_name": "powershell.exe",
+        "detail": "Encoded IEX Download",
+        "cpu_usage": "30.0",
+        "mem_usage": "450",
+        "network_io": "15.0",
+        "integrity_level": "Medium",
+        "is_signed": "1",
+        "label": "suspicious",
+        "mitre_mapping": {
+          "technique": "Data Exfiltration via C2",
+          "id": "T1048",
+          "tactic": "Exfiltration"
+        }
+      },
+      {
+        "id": "fnd-ds-006-log-8",
+        "timestamp": "2026-04-02 00:18:10",
+        "event_id": "4688",
+        "level": "Warning",
+        "source": "Security",
+        "computer": "WIN-SOC-PROD-01",
+        "user": "WIN-SOC\\Admin",
+        "opcode": "Exec",
+        "task_category": "Process Creation",
+        "process_id": "4670",
+        "process_name": "powershell.exe",
+        "detail": "Encoded IEX Download",
+        "cpu_usage": "30.0",
+        "mem_usage": "450",
+        "network_io": "15.0",
+        "integrity_level": "Medium",
+        "is_signed": "1",
+        "label": "suspicious",
+        "mitre_mapping": {
+          "technique": "Data Exfiltration via C2",
+          "id": "T1048",
+          "tactic": "Exfiltration"
+        }
+      },
+      {
+        "id": "fnd-ds-006-log-9",
+        "timestamp": "2026-04-02 00:18:11",
+        "event_id": "4688",
+        "level": "Warning",
+        "source": "Security",
+        "computer": "WIN-SOC-PROD-02",
+        "user": "NT AUTHORITY\\SYSTEM",
+        "opcode": "Exec",
+        "task_category": "Process Creation",
+        "process_id": "6461",
+        "process_name": "powershell.exe",
+        "detail": "Encoded IEX Download",
+        "cpu_usage": "30.0",
+        "mem_usage": "450",
+        "network_io": "15.0",
+        "integrity_level": "Medium",
+        "is_signed": "1",
+        "label": "suspicious",
+        "mitre_mapping": {
+          "technique": "Data Exfiltration via C2",
+          "id": "T1048",
+          "tactic": "Exfiltration"
+        }
+      },
+      {
+        "id": "fnd-ds-006-log-10",
+        "timestamp": "2026-04-02 00:18:12",
+        "event_id": "4688",
+        "level": "Warning",
+        "source": "Security",
+        "computer": "WIN-SOC-PROD-01",
+        "user": "WIN-SOC\\User1",
+        "opcode": "Exec",
+        "task_category": "Process Creation",
+        "process_id": "2792",
+        "process_name": "powershell.exe",
+        "detail": "Encoded IEX Download",
+        "cpu_usage": "30.0",
+        "mem_usage": "450",
+        "network_io": "15.0",
+        "integrity_level": "Medium",
+        "is_signed": "1",
+        "label": "suspicious",
+        "mitre_mapping": {
+          "technique": "Data Exfiltration via C2",
+          "id": "T1048",
+          "tactic": "Exfiltration"
+        }
+      },
+      {
+        "id": "fnd-ds-006-log-11",
+        "timestamp": "2026-04-02 00:18:13",
+        "event_id": "4688",
+        "level": "Warning",
+        "source": "Security",
+        "computer": "WIN-SOC-PROD-02",
+        "user": "WIN-SOC\\Admin",
+        "opcode": "Exec",
+        "task_category": "Process Creation",
+        "process_id": "8799",
+        "process_name": "powershell.exe",
+        "detail": "Encoded IEX Download",
+        "cpu_usage": "30.0",
+        "mem_usage": "450",
+        "network_io": "15.0",
+        "integrity_level": "Medium",
+        "is_signed": "1",
+        "label": "suspicious",
+        "mitre_mapping": {
+          "technique": "Data Exfiltration via C2",
+          "id": "T1048",
+          "tactic": "Exfiltration"
+        }
+      },
+      {
+        "id": "fnd-ds-006-log-12",
+        "timestamp": "2026-04-02 00:18:14",
+        "event_id": "4688",
+        "level": "Warning",
+        "source": "Security",
+        "computer": "WIN-SOC-PROD-02",
+        "user": "NT AUTHORITY\\SYSTEM",
+        "opcode": "Exec",
+        "task_category": "Process Creation",
+        "process_id": "382",
+        "process_name": "powershell.exe",
+        "detail": "Encoded IEX Download",
+        "cpu_usage": "30.0",
+        "mem_usage": "450",
+        "network_io": "15.0",
+        "integrity_level": "Medium",
+        "is_signed": "1",
+        "label": "suspicious",
+        "mitre_mapping": {
+          "technique": "Data Exfiltration via C2",
+          "id": "T1048",
+          "tactic": "Exfiltration"
+        }
+      },
+      {
+        "id": "fnd-ds-006-log-13",
+        "timestamp": "2026-04-02 00:18:15",
+        "event_id": "4688",
+        "level": "Warning",
+        "source": "Security",
+        "computer": "WIN-SOC-PROD-02",
+        "user": "WIN-SOC\\Dev-01",
+        "opcode": "Exec",
+        "task_category": "Process Creation",
+        "process_id": "6627",
+        "process_name": "powershell.exe",
+        "detail": "Encoded IEX Download",
+        "cpu_usage": "30.0",
+        "mem_usage": "450",
+        "network_io": "15.0",
+        "integrity_level": "Medium",
+        "is_signed": "1",
+        "label": "suspicious",
+        "mitre_mapping": {
+          "technique": "Data Exfiltration via C2",
+          "id": "T1048",
+          "tactic": "Exfiltration"
+        }
+      },
+      {
+        "id": "fnd-ds-006-log-14",
+        "timestamp": "2026-04-02 00:18:16",
+        "event_id": "4688",
+        "level": "Warning",
+        "source": "Security",
+        "computer": "WIN-SOC-PROD-01",
+        "user": "NT AUTHORITY\\SYSTEM",
+        "opcode": "Exec",
+        "task_category": "Process Creation",
+        "process_id": "3584",
+        "process_name": "powershell.exe",
+        "detail": "Encoded IEX Download",
+        "cpu_usage": "30.0",
+        "mem_usage": "450",
+        "network_io": "15.0",
+        "integrity_level": "Medium",
+        "is_signed": "1",
+        "label": "suspicious",
+        "mitre_mapping": {
+          "technique": "Data Exfiltration via C2",
+          "id": "T1048",
+          "tactic": "Exfiltration"
+        }
+      },
+      {
+        "id": "fnd-ds-006-log-15",
+        "timestamp": "2026-04-02 00:18:17",
+        "event_id": "4688",
+        "level": "Warning",
+        "source": "Security",
+        "computer": "WIN-SOC-PROD-01",
+        "user": "NT AUTHORITY\\SYSTEM",
+        "opcode": "Exec",
+        "task_category": "Process Creation",
+        "process_id": "6650",
+        "process_name": "powershell.exe",
+        "detail": "Encoded IEX Download",
+        "cpu_usage": "30.0",
+        "mem_usage": "450",
+        "network_io": "15.0",
+        "integrity_level": "Medium",
+        "is_signed": "1",
+        "label": "suspicious",
+        "mitre_mapping": {
+          "technique": "Data Exfiltration via C2",
+          "id": "T1048",
+          "tactic": "Exfiltration"
+        }
+      },
+      {
+        "id": "fnd-ds-006-log-16",
+        "timestamp": "2026-04-02 00:18:53",
+        "event_id": "10",
+        "level": "Critical",
+        "source": "Sysmon",
+        "computer": "WIN-SOC-PROD-02",
+        "user": "NT AUTHORITY\\SYSTEM",
+        "opcode": "Read",
+        "task_category": "Process Access",
+        "process_id": "1346",
+        "process_name": "mimikatz.exe",
+        "detail": "LSASS Dump",
+        "cpu_usage": "65.0",
+        "mem_usage": "1100",
+        "network_io": "90.0",
+        "integrity_level": "System",
+        "is_signed": "0",
+        "label": "suspicious",
+        "mitre_mapping": {
+          "technique": "Data Exfiltration via C2",
+          "id": "T1048",
+          "tactic": "Exfiltration"
+        }
+      },
+      {
+        "id": "fnd-ds-006-log-17",
+        "timestamp": "2026-04-02 00:18:54",
+        "event_id": "10",
+        "level": "Critical",
+        "source": "Sysmon",
+        "computer": "WIN-SOC-PROD-01",
+        "user": "NT AUTHORITY\\SYSTEM",
+        "opcode": "Read",
+        "task_category": "Process Access",
+        "process_id": "4748",
+        "process_name": "mimikatz.exe",
+        "detail": "LSASS Dump",
+        "cpu_usage": "65.0",
+        "mem_usage": "1100",
+        "network_io": "90.0",
+        "integrity_level": "System",
+        "is_signed": "0",
+        "label": "suspicious",
+        "mitre_mapping": {
+          "technique": "Data Exfiltration via C2",
+          "id": "T1048",
+          "tactic": "Exfiltration"
+        }
+      },
+      {
+        "id": "fnd-ds-006-log-18",
+        "timestamp": "2026-04-02 00:18:55",
+        "event_id": "10",
+        "level": "Critical",
+        "source": "Sysmon",
+        "computer": "WIN-SOC-PROD-01",
+        "user": "NT AUTHORITY\\SYSTEM",
+        "opcode": "Read",
+        "task_category": "Process Access",
+        "process_id": "768",
+        "process_name": "mimikatz.exe",
+        "detail": "LSASS Dump",
+        "cpu_usage": "65.0",
+        "mem_usage": "1100",
+        "network_io": "90.0",
+        "integrity_level": "System",
+        "is_signed": "0",
+        "label": "suspicious",
+        "mitre_mapping": {
+          "technique": "Data Exfiltration via C2",
+          "id": "T1048",
+          "tactic": "Exfiltration"
+        }
+      },
+      {
+        "id": "fnd-ds-006-log-19",
+        "timestamp": "2026-04-02 00:18:56",
+        "event_id": "10",
+        "level": "Critical",
+        "source": "Sysmon",
+        "computer": "WIN-SOC-PROD-02",
+        "user": "NT AUTHORITY\\SYSTEM",
+        "opcode": "Read",
+        "task_category": "Process Access",
+        "process_id": "8743",
+        "process_name": "mimikatz.exe",
+        "detail": "LSASS Dump",
+        "cpu_usage": "65.0",
+        "mem_usage": "1100",
+        "network_io": "90.0",
+        "integrity_level": "System",
+        "is_signed": "0",
+        "label": "suspicious",
+        "mitre_mapping": {
+          "technique": "Data Exfiltration via C2",
+          "id": "T1048",
+          "tactic": "Exfiltration"
+        }
+      },
+      {
+        "id": "fnd-ds-006-log-20",
+        "timestamp": "2026-04-02 00:18:57",
+        "event_id": "10",
+        "level": "Critical",
+        "source": "Sysmon",
+        "computer": "WIN-SOC-PROD-01",
+        "user": "NT AUTHORITY\\SYSTEM",
+        "opcode": "Read",
+        "task_category": "Process Access",
+        "process_id": "3028",
+        "process_name": "mimikatz.exe",
+        "detail": "LSASS Dump",
+        "cpu_usage": "65.0",
+        "mem_usage": "1100",
+        "network_io": "90.0",
+        "integrity_level": "System",
+        "is_signed": "0",
+        "label": "suspicious",
+        "mitre_mapping": {
+          "technique": "Data Exfiltration via C2",
+          "id": "T1048",
+          "tactic": "Exfiltration"
+        }
+      },
+      {
+        "id": "fnd-ds-006-log-21",
+        "timestamp": "2026-04-02 00:18:58",
+        "event_id": "10",
+        "level": "Critical",
+        "source": "Sysmon",
+        "computer": "WIN-SOC-PROD-02",
+        "user": "NT AUTHORITY\\SYSTEM",
+        "opcode": "Read",
+        "task_category": "Process Access",
+        "process_id": "1389",
+        "process_name": "mimikatz.exe",
+        "detail": "LSASS Dump",
+        "cpu_usage": "65.0",
+        "mem_usage": "1100",
+        "network_io": "90.0",
+        "integrity_level": "System",
+        "is_signed": "0",
+        "label": "suspicious",
+        "mitre_mapping": {
+          "technique": "Data Exfiltration via C2",
+          "id": "T1048",
+          "tactic": "Exfiltration"
+        }
+      },
+      {
+        "id": "fnd-ds-006-log-22",
+        "timestamp": "2026-04-02 00:18:59",
+        "event_id": "10",
+        "level": "Critical",
+        "source": "Sysmon",
+        "computer": "WIN-SOC-PROD-02",
+        "user": "NT AUTHORITY\\SYSTEM",
+        "opcode": "Read",
+        "task_category": "Process Access",
+        "process_id": "2543",
+        "process_name": "mimikatz.exe",
+        "detail": "LSASS Dump",
+        "cpu_usage": "65.0",
+        "mem_usage": "1100",
+        "network_io": "90.0",
+        "integrity_level": "System",
+        "is_signed": "0",
+        "label": "suspicious",
+        "mitre_mapping": {
+          "technique": "Data Exfiltration via C2",
+          "id": "T1048",
+          "tactic": "Exfiltration"
+        }
+      },
+      {
+        "id": "fnd-ds-006-log-23",
+        "timestamp": "2026-04-02 00:19:00",
+        "event_id": "10",
+        "level": "Critical",
+        "source": "Sysmon",
+        "computer": "WIN-SOC-PROD-01",
+        "user": "NT AUTHORITY\\SYSTEM",
+        "opcode": "Read",
+        "task_category": "Process Access",
+        "process_id": "5400",
+        "process_name": "mimikatz.exe",
+        "detail": "LSASS Dump",
+        "cpu_usage": "65.0",
+        "mem_usage": "1100",
+        "network_io": "90.0",
+        "integrity_level": "System",
+        "is_signed": "0",
+        "label": "suspicious",
+        "mitre_mapping": {
+          "technique": "Data Exfiltration via C2",
+          "id": "T1048",
+          "tactic": "Exfiltration"
+        }
+      },
+      {
+        "id": "fnd-ds-006-log-24",
+        "timestamp": "2026-04-02 00:19:01",
+        "event_id": "10",
+        "level": "Critical",
+        "source": "Sysmon",
+        "computer": "WIN-SOC-PROD-01",
+        "user": "NT AUTHORITY\\SYSTEM",
+        "opcode": "Read",
+        "task_category": "Process Access",
+        "process_id": "7821",
+        "process_name": "mimikatz.exe",
+        "detail": "LSASS Dump",
+        "cpu_usage": "65.0",
+        "mem_usage": "1100",
+        "network_io": "90.0",
+        "integrity_level": "System",
+        "is_signed": "0",
+        "label": "suspicious",
+        "mitre_mapping": {
+          "technique": "Data Exfiltration via C2",
+          "id": "T1048",
+          "tactic": "Exfiltration"
+        }
+      },
+      {
+        "id": "fnd-ds-006-log-25",
+        "timestamp": "2026-04-02 00:19:02",
+        "event_id": "10",
+        "level": "Critical",
+        "source": "Sysmon",
+        "computer": "WIN-SOC-PROD-01",
+        "user": "NT AUTHORITY\\SYSTEM",
+        "opcode": "Read",
+        "task_category": "Process Access",
+        "process_id": "3305",
+        "process_name": "mimikatz.exe",
+        "detail": "LSASS Dump",
+        "cpu_usage": "65.0",
+        "mem_usage": "1100",
+        "network_io": "90.0",
+        "integrity_level": "System",
+        "is_signed": "0",
+        "label": "suspicious",
+        "mitre_mapping": {
+          "technique": "Data Exfiltration via C2",
+          "id": "T1048",
+          "tactic": "Exfiltration"
+        }
+      },
+      {
+        "id": "fnd-ds-006-log-26",
+        "timestamp": "2026-04-02 00:19:03",
+        "event_id": "10",
+        "level": "Critical",
+        "source": "Sysmon",
+        "computer": "WIN-SOC-PROD-01",
+        "user": "NT AUTHORITY\\SYSTEM",
+        "opcode": "Read",
+        "task_category": "Process Access",
+        "process_id": "366",
+        "process_name": "mimikatz.exe",
+        "detail": "LSASS Dump",
+        "cpu_usage": "65.0",
+        "mem_usage": "1100",
+        "network_io": "90.0",
+        "integrity_level": "System",
+        "is_signed": "0",
+        "label": "suspicious",
+        "mitre_mapping": {
+          "technique": "Data Exfiltration via C2",
+          "id": "T1048",
+          "tactic": "Exfiltration"
+        }
+      },
+      {
+        "id": "fnd-ds-006-log-27",
+        "timestamp": "2026-04-02 00:19:04",
+        "event_id": "10",
+        "level": "Critical",
+        "source": "Sysmon",
+        "computer": "WIN-SOC-PROD-02",
+        "user": "NT AUTHORITY\\SYSTEM",
+        "opcode": "Read",
+        "task_category": "Process Access",
+        "process_id": "6765",
+        "process_name": "mimikatz.exe",
+        "detail": "LSASS Dump",
+        "cpu_usage": "65.0",
+        "mem_usage": "1100",
+        "network_io": "90.0",
+        "integrity_level": "System",
+        "is_signed": "0",
+        "label": "suspicious",
+        "mitre_mapping": {
+          "technique": "Data Exfiltration via C2",
+          "id": "T1048",
+          "tactic": "Exfiltration"
+        }
+      },
+      {
+        "id": "fnd-ds-006-log-28",
+        "timestamp": "2026-04-02 00:19:05",
+        "event_id": "10",
+        "level": "Critical",
+        "source": "Sysmon",
+        "computer": "WIN-SOC-PROD-01",
+        "user": "NT AUTHORITY\\SYSTEM",
+        "opcode": "Read",
+        "task_category": "Process Access",
+        "process_id": "127",
+        "process_name": "mimikatz.exe",
+        "detail": "LSASS Dump",
+        "cpu_usage": "65.0",
+        "mem_usage": "1100",
+        "network_io": "90.0",
+        "integrity_level": "System",
+        "is_signed": "0",
+        "label": "suspicious",
+        "mitre_mapping": {
+          "technique": "Data Exfiltration via C2",
+          "id": "T1048",
+          "tactic": "Exfiltration"
+        }
+      },
+      {
+        "id": "fnd-ds-006-log-29",
+        "timestamp": "2026-04-02 00:19:06",
+        "event_id": "10",
+        "level": "Critical",
+        "source": "Sysmon",
+        "computer": "WIN-SOC-PROD-02",
+        "user": "NT AUTHORITY\\SYSTEM",
+        "opcode": "Read",
+        "task_category": "Process Access",
+        "process_id": "3166",
+        "process_name": "mimikatz.exe",
+        "detail": "LSASS Dump",
+        "cpu_usage": "65.0",
+        "mem_usage": "1100",
+        "network_io": "90.0",
+        "integrity_level": "System",
+        "is_signed": "0",
+        "label": "suspicious",
+        "mitre_mapping": {
+          "technique": "Data Exfiltration via C2",
+          "id": "T1048",
+          "tactic": "Exfiltration"
+        }
+      },
+      {
+        "id": "fnd-ds-006-log-30",
+        "timestamp": "2026-04-02 00:19:07",
+        "event_id": "10",
+        "level": "Critical",
+        "source": "Sysmon",
+        "computer": "WIN-SOC-PROD-02",
+        "user": "NT AUTHORITY\\SYSTEM",
+        "opcode": "Read",
+        "task_category": "Process Access",
+        "process_id": "9018",
+        "process_name": "mimikatz.exe",
+        "detail": "LSASS Dump",
+        "cpu_usage": "65.0",
+        "mem_usage": "1100",
+        "network_io": "90.0",
+        "integrity_level": "System",
+        "is_signed": "0",
+        "label": "suspicious",
+        "mitre_mapping": {
+          "technique": "Data Exfiltration via C2",
+          "id": "T1048",
+          "tactic": "Exfiltration"
+        }
+      }
+    ]
+  },
+  "attack_chain": {
+    "chain_id": "chain-ds-006-01",
+    "title": "Suspicious Network Exfiltration Detection",
+    "mitre_step": "T1048",
+    "severity": "critical",
+    "phases": [
+      "Initial Access",
+      "Execution",
+      "Persistence",
+      "Command & Control"
+    ]
+  },
+  "timestamps": [
+    {
+      "timestamp": "2026-04-02 00:18:03",
+      "attack_category": "Exfiltration",
+      "event_id": "4688",
+      "detail": "Encoded IEX Download"
+    },
+    {
+      "timestamp": "2026-04-02 00:18:04",
+      "attack_category": "Exfiltration",
+      "event_id": "4688",
+      "detail": "Encoded IEX Download"
+    },
+    {
+      "timestamp": "2026-04-02 00:18:05",
+      "attack_category": "Exfiltration",
+      "event_id": "4688",
+      "detail": "Encoded IEX Download"
+    },
+    {
+      "timestamp": "2026-04-02 00:18:06",
+      "attack_category": "Exfiltration",
+      "event_id": "4688",
+      "detail": "Encoded IEX Download"
+    },
+    {
+      "timestamp": "2026-04-02 00:18:07",
+      "attack_category": "Exfiltration",
+      "event_id": "4688",
+      "detail": "Encoded IEX Download"
+    },
+    {
+      "timestamp": "2026-04-02 00:18:08",
+      "attack_category": "Exfiltration",
+      "event_id": "4688",
+      "detail": "Encoded IEX Download"
+    },
+    {
+      "timestamp": "2026-04-02 00:18:09",
+      "attack_category": "Exfiltration",
+      "event_id": "4688",
+      "detail": "Encoded IEX Download"
+    },
+    {
+      "timestamp": "2026-04-02 00:18:10",
+      "attack_category": "Exfiltration",
+      "event_id": "4688",
+      "detail": "Encoded IEX Download"
+    },
+    {
+      "timestamp": "2026-04-02 00:18:11",
+      "attack_category": "Exfiltration",
+      "event_id": "4688",
+      "detail": "Encoded IEX Download"
+    },
+    {
+      "timestamp": "2026-04-02 00:18:12",
+      "attack_category": "Exfiltration",
+      "event_id": "4688",
+      "detail": "Encoded IEX Download"
+    },
+    {
+      "timestamp": "2026-04-02 00:18:13",
+      "attack_category": "Exfiltration",
+      "event_id": "4688",
+      "detail": "Encoded IEX Download"
+    },
+    {
+      "timestamp": "2026-04-02 00:18:14",
+      "attack_category": "Exfiltration",
+      "event_id": "4688",
+      "detail": "Encoded IEX Download"
+    },
+    {
+      "timestamp": "2026-04-02 00:18:15",
+      "attack_category": "Exfiltration",
+      "event_id": "4688",
+      "detail": "Encoded IEX Download"
+    },
+    {
+      "timestamp": "2026-04-02 00:18:16",
+      "attack_category": "Exfiltration",
+      "event_id": "4688",
+      "detail": "Encoded IEX Download"
+    },
+    {
+      "timestamp": "2026-04-02 00:18:17",
+      "attack_category": "Exfiltration",
+      "event_id": "4688",
+      "detail": "Encoded IEX Download"
+    },
+    {
+      "timestamp": "2026-04-02 00:18:53",
+      "attack_category": "Exfiltration",
+      "event_id": "10",
+      "detail": "LSASS Dump"
+    },
+    {
+      "timestamp": "2026-04-02 00:18:54",
+      "attack_category": "Exfiltration",
+      "event_id": "10",
+      "detail": "LSASS Dump"
+    },
+    {
+      "timestamp": "2026-04-02 00:18:55",
+      "attack_category": "Exfiltration",
+      "event_id": "10",
+      "detail": "LSASS Dump"
+    },
+    {
+      "timestamp": "2026-04-02 00:18:56",
+      "attack_category": "Exfiltration",
+      "event_id": "10",
+      "detail": "LSASS Dump"
+    },
+    {
+      "timestamp": "2026-04-02 00:18:57",
+      "attack_category": "Exfiltration",
+      "event_id": "10",
+      "detail": "LSASS Dump"
+    },
+    {
+      "timestamp": "2026-04-02 00:18:58",
+      "attack_category": "Exfiltration",
+      "event_id": "10",
+      "detail": "LSASS Dump"
+    },
+    {
+      "timestamp": "2026-04-02 00:18:59",
+      "attack_category": "Exfiltration",
+      "event_id": "10",
+      "detail": "LSASS Dump"
+    },
+    {
+      "timestamp": "2026-04-02 00:19:00",
+      "attack_category": "Exfiltration",
+      "event_id": "10",
+      "detail": "LSASS Dump"
+    },
+    {
+      "timestamp": "2026-04-02 00:19:01",
+      "attack_category": "Exfiltration",
+      "event_id": "10",
+      "detail": "LSASS Dump"
+    },
+    {
+      "timestamp": "2026-04-02 00:19:02",
+      "attack_category": "Exfiltration",
+      "event_id": "10",
+      "detail": "LSASS Dump"
+    },
+    {
+      "timestamp": "2026-04-02 00:19:03",
+      "attack_category": "Exfiltration",
+      "event_id": "10",
+      "detail": "LSASS Dump"
+    },
+    {
+      "timestamp": "2026-04-02 00:19:04",
+      "attack_category": "Exfiltration",
+      "event_id": "10",
+      "detail": "LSASS Dump"
+    },
+    {
+      "timestamp": "2026-04-02 00:19:05",
+      "attack_category": "Exfiltration",
+      "event_id": "10",
+      "detail": "LSASS Dump"
+    },
+    {
+      "timestamp": "2026-04-02 00:19:06",
+      "attack_category": "Exfiltration",
+      "event_id": "10",
+      "detail": "LSASS Dump"
+    },
+    {
+      "timestamp": "2026-04-02 00:19:07",
+      "attack_category": "Exfiltration",
+      "event_id": "10",
+      "detail": "LSASS Dump"
+    }
+  ]
+}

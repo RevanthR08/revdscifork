@@ -1,6 +1,7 @@
 import React from "react"
 import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
+import { DETECTION_TYPE_LABELS } from "@/lib/mockData"
 
 interface FindingRow {
   severity: string
@@ -73,7 +74,7 @@ export default function FindingsSummaryTable({ findings }: FindingsSummaryTableP
                 <span className="text-xs text-zinc-300 truncate block max-w-[180px]">{row.title}</span>
               </td>
               <td className="px-4 py-2">
-                <span className="text-[10px] text-zinc-500">{row.type === "rule" ? "Rule" : row.type === "ml_anomaly" ? "ML" : "Travel"}</span>
+                <span className="text-[10px] text-zinc-500">{DETECTION_TYPE_LABELS[row.type] || row.type}</span>
               </td>
               <td className="px-4 py-2">
                 <span className="text-xs text-zinc-400 font-mono">{row.count}</span>

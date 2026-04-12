@@ -32,7 +32,7 @@ const SEVERITY_COLORS: Record<string, string> = {
   Info: "#6b7280",
 }
 
-const TYPE_COLORS = ["#3b82f6", "#8b5cf6", "#ef4444", "#10b981"]
+const TYPE_COLORS = ["#3b82f6", "#8b5cf6", "#f97316", "#10b981", "#eab308", "#ef4444"]
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {

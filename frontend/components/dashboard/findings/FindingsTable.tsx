@@ -3,6 +3,7 @@ import { motion } from "framer-motion"
 import { AlertTriangle, ChevronRight } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
+import { DETECTION_TYPE_LABELS } from "@/lib/mockData"
 
 interface Finding {
   id: string
@@ -106,7 +107,7 @@ export default function FindingsTable({ findings, onViewAll }: FindingsTableProp
                   </td>
                   <td className="px-4 py-3">
                     <span className="text-xs text-zinc-400">
-                      {finding.detection_type === "rule" ? "Rule" : finding.detection_type === "ml_anomaly" ? "ML" : "Travel"}
+                      {DETECTION_TYPE_LABELS[finding.detection_type] || finding.detection_type}
                     </span>
                   </td>
                   <td className="px-4 py-3">

@@ -54,9 +54,12 @@ const SEVERITY_COLORS: Record<string, string> = {
 }
 
 const TYPE_LABELS: Record<string, string> = {
-  rule: "Rule-Based",
-  ml_anomaly: "ML Anomaly",
-  impossible_travel: "Travel",
+  rule:              "Rule-Based",
+  ml_anomaly:        "ML Anomaly",
+  behavioral:        "Behavioral",
+  yara_match:        "YARA Match",
+  heuristic:         "Heuristic",
+  impossible_travel: "Impossible Travel",
 }
 
 export default function DashboardPage() {

@@ -11,6 +11,7 @@ import {
   getMockChains,
   getMockSummary,
   getMockCategories,
+  USER_CSV_TO_SCAN_ID,
 } from "@/lib/mockData"
 
 // Simulates a short async delay for realistic UX
@@ -87,13 +88,17 @@ export async function deleteAnalysis(_id: string) {
 }
 
 /**
- * STUB: Upload file (MOCK mode handles the upload by returning a pre-defined ID)
+ * Upload file — matches userXXXlogs.csv filenames to their enriched JSON dataset.
+ * If the file name matches a known user dataset, the corresponding scan_id is
+ * returned so the UI navigates directly to the rich pre-computed analysis.
+ * Unknown files fall back to the generic mock-upload-id.
  */
-export async function uploadFile(_file: File) {
+export async function uploadFile(file: File) {
   await delay(1500)
+  const matchedScanId = USER_CSV_TO_SCAN_ID[file.name]
   return { 
     message: "Success", 
-    scan_id: "mock-upload-id" 
+    scan_id: matchedScanId ?? "mock-upload-id"
   }
 }
 

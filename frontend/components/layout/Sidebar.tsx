@@ -9,7 +9,6 @@ import {
   AlertTriangle,
   GitBranch,
   FileText,
-  Link2,
   Home,
   Settings,
   ChevronLeft,
@@ -46,7 +45,6 @@ export default function Sidebar({ analysisId, collapsed, onToggle, mobileOpen = 
 
   const mainNavItems = [
     { href: "/dashboard", label: "Dashboard", icon: Home },
-    { href: "/connectors", label: "Connectors", icon: Link2 },
   ]
 
   const analysisNavItems = analysisId

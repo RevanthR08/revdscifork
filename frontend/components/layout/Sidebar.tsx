@@ -19,6 +19,7 @@ import {
 } from "lucide-react"
 import ThemeToggle from "./ThemeToggle"
 import { cn } from "@/lib/utils"
+import { LogOut } from "lucide-react"
 
 interface SidebarProps {
   analysisId?: string
@@ -218,6 +219,18 @@ export default function Sidebar({ analysisId, collapsed, onToggle }: SidebarProp
         <div className="flex items-center justify-center">
           <ThemeToggle />
         </div>
+        <button
+          onClick={() => {
+            localStorage.removeItem('auth_session');
+            router.push('/auth');
+          }}
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors duration-150"
+          style={{ borderRadius: "6px" }}
+        >
+          <LogOut className="w-4 h-4" />
+          {!collapsed && <span className="text-sm">Logout</span>}
+        </button>
+
         <button
           onClick={onToggle}
           className="w-full flex items-center justify-center gap-2 px-3 py-2 text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors duration-150"

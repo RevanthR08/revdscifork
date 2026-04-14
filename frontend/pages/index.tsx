@@ -3,7 +3,7 @@ import { useRouter } from "next/router"
 import { motion } from "framer-motion"
 import DashboardLayout from "@/components/layout/DashboardLayout"
 import UploadZone from "@/components/dashboard/UploadZone"
-import { CheckCircle, Loader2, BarChart3, AlertTriangle, Database, ShieldAlert } from "lucide-react"
+import { CheckCircle, Loader2, BarChart3, AlertTriangle, Database, ShieldAlert, Download } from "lucide-react"
 import { listScans } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
@@ -101,16 +101,19 @@ export default function HomePage() {
               AI-powered threat analysis — 10 pre-loaded Windows Event Log datasets
             </p>
           </div>
-          <div
-            className="flex items-center gap-2 px-4 py-2 border border-zinc-700 bg-zinc-900"
+          <a
+            href="/DEMO_logs.csv"
+            download="DEMO_logs.csv"
+            className="flex items-center gap-2 px-4 py-2 border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 transition-all duration-200"
             style={{ borderRadius: "6px" }}
           >
-            <Database className="w-4 h-4 text-purple-400" />
-            <span className="text-sm font-medium text-zinc-300">
-              {analyses.length} Datasets Loaded
+            <Download className="w-4 h-4" />
+            <span className="text-sm font-semibold">
+              Download Demo CSV
             </span>
-          </div>
+          </a>
         </div>
+
 
         {/* Upload Zone */}
         <UploadZone

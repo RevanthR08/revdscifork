@@ -1,11 +1,13 @@
 import React, { useMemo, useState } from "react"
 import Link from "next/link"
 import DashboardLayout from "@/components/layout/DashboardLayout"
+import { AnimatePresence, motion } from "framer-motion"
 import { Link2, ShieldCheck, CheckCircle2, AlertTriangle, RefreshCw, KeyRound, FileText, ArrowLeft } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 type Connector = {
   code: string
+  brand: "splunk" | "suricata" | "webhook" | "custom"
   name: string
   type: string
   status: "Active" | "Disconnected"
@@ -16,6 +18,7 @@ type Connector = {
 const initialConnectors: Connector[] = [
   {
     code: "SP",
+    brand: "splunk",
     name: "Splunk SIEM",
     type: "Security Information & Event Management",
     status: "Active",
@@ -24,6 +27,7 @@ const initialConnectors: Connector[] = [
   },
   {
     code: "SU",
+    brand: "suricata",
     name: "Suricata IDS",
     type: "Intrusion Detection System",
     status: "Active",
@@ -31,15 +35,8 @@ const initialConnectors: Connector[] = [
     seal: "SHA-256 Verified",
   },
   {
-    code: "CS",
-    name: "CrowdStrike Falcon",
-    type: "Endpoint Detection & Response",
-    status: "Disconnected",
-    lastSync: "Yesterday",
-    seal: "Verification Failed",
-  },
-  {
     code: "WH",
+    brand: "webhook",
     name: "Generic Webhook",
     type: "Custom HTTP POST Endpoint",
     status: "Active",
@@ -58,6 +55,21 @@ const makeKey = () => {
 }
 
 const maskKey = (key: string) => `${key.slice(0, 4)}${"*".repeat(20)}${key.slice(-4)}`
+
+function ConnectorLogo({ connector }: { connector: Connector }) {
+  const base = "w-9 h-9 rounded-md flex items-center justify-center text-[11px] font-black border"
+
+  if (connector.brand === "splunk") {
+    return <div className={`${base} bg-orange-500/15 border-orange-500/40 text-orange-300`}>SP</div>
+  }
+  if (connector.brand === "suricata") {
+    return <div className={`${base} bg-red-500/15 border-red-500/40 text-red-300`}>SU</div>
+  }
+  if (connector.brand === "webhook") {
+    return <div className={`${base} bg-blue-500/15 border-blue-500/40 text-blue-300`}>WH</div>
+  }
+  return <div className={`${base} bg-violet-500/15 border-violet-500/40 text-violet-300`}>{connector.code}</div>
+}
 
 export default function ConnectorsPage() {
   const [connectors, setConnectors] = useState<Connector[]>(initialConnectors)
@@ -112,6 +124,7 @@ export default function ConnectorsPage() {
       ...prev,
       {
         code,
+        brand: "custom",
         name: `New Connector ${code}`,
         type: "Custom SIEM Ingestion Endpoint",
         status: "Disconnected",
@@ -139,7 +152,7 @@ export default function ConnectorsPage() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div>
+        <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}>
           <Link
             href="/dashboard"
             className="inline-flex items-center gap-1 rounded-md border border-zinc-700 bg-zinc-950 px-3 py-1.5 text-xs font-semibold text-zinc-300 hover:text-white hover:border-zinc-500"
@@ -147,15 +160,27 @@ export default function ConnectorsPage() {
             <ArrowLeft className="w-3.5 h-3.5" />
             Back
           </Link>
-        </div>
+        </motion.div>
 
-        {banner && (
-          <div className="rounded-md border border-blue-500/30 bg-blue-500/10 px-4 py-2 text-xs text-blue-200">
-            {banner}
-          </div>
-        )}
+        <AnimatePresence>
+          {banner && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              className="rounded-md border border-blue-500/30 bg-blue-500/10 px-4 py-2 text-xs text-blue-200"
+            >
+              {banner}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        <div className="bg-zinc-900 border border-zinc-800 rounded-md p-5">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35 }}
+          className="bg-zinc-900 border border-zinc-800 rounded-md p-5"
+        >
           <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div>
               <p className="text-xs uppercase tracking-wider text-zinc-500">Connector Pipeline v4.2</p>
@@ -172,7 +197,7 @@ export default function ConnectorsPage() {
               ADD NEW CONNECTOR
             </button>
           </div>
-        </div>
+        </motion.div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
           {[
@@ -180,19 +205,30 @@ export default function ConnectorsPage() {
             { label: "Latest Signature", value: latestSignature },
             { label: "Audit Logs", value: mockLogsCount.toLocaleString() },
             { label: "Processed Alerts", value: mockAlerts.toLocaleString() },
-          ].map((card) => (
-            <div key={card.label} className="bg-zinc-900 border border-zinc-800 rounded-md p-4">
+          ].map((card, idx) => (
+            <motion.div
+              key={card.label}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.08 * idx }}
+              className="bg-zinc-900 border border-zinc-800 rounded-md p-4"
+            >
               <p className="text-xs uppercase tracking-wider text-zinc-500">{card.label}</p>
               <p className="mt-2 text-lg font-bold text-white">{card.value}</p>
-            </div>
+            </motion.div>
           ))}
         </div>
 
-        <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden"
+        >
           <div className="px-5 py-4 border-b border-zinc-800">
             <h2 className="text-sm font-bold text-white">Active Connector Pipeline</h2>
           </div>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto scrollbar-transparent">
             <table className="w-full min-w-[900px]">
               <thead>
                 <tr className="border-b border-zinc-800">
@@ -204,13 +240,17 @@ export default function ConnectorsPage() {
                 </tr>
               </thead>
               <tbody>
-                {connectors.map((connector) => (
-                  <tr key={connector.code} className="border-b border-zinc-800/50">
+                {connectors.map((connector, idx) => (
+                  <motion.tr
+                    key={connector.code}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.03 * idx }}
+                    className="border-b border-zinc-800/50 hover:bg-zinc-800/20"
+                  >
                     <td className="px-4 py-3">
                       <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 rounded-md bg-zinc-800 text-zinc-200 text-xs font-bold flex items-center justify-center">
-                          {connector.code}
-                        </div>
+                        <ConnectorLogo connector={connector} />
                         <div>
                           <p className="text-sm font-semibold text-white">{connector.name}</p>
                           <p className="text-xs text-zinc-500">{connector.type}</p>
@@ -237,7 +277,7 @@ export default function ConnectorsPage() {
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => handleConnectorAction(connector.code)}
-                          className="rounded-md px-2.5 py-1 text-[11px] font-semibold bg-zinc-800 text-zinc-200 hover:bg-zinc-700"
+                          className="rounded-md px-2.5 py-1 text-[11px] font-semibold bg-zinc-800 text-zinc-200 hover:bg-zinc-700 transition-colors"
                         >
                           {connector.status === "Disconnected" ? "Connect" : "Configure"}
                         </button>
@@ -246,21 +286,27 @@ export default function ConnectorsPage() {
                             setSelectedConnector(connector.code)
                             setBanner(`Viewing ${connector.name} logs.`)
                           }}
-                          className="rounded-md px-2.5 py-1 text-[11px] font-semibold bg-zinc-800 text-zinc-200 hover:bg-zinc-700"
+                          className="rounded-md px-2.5 py-1 text-[11px] font-semibold bg-zinc-800 text-zinc-200 hover:bg-zinc-700 transition-colors"
                         >
                           View Logs
                         </button>
                       </div>
                     </td>
-                  </tr>
+                  </motion.tr>
                 ))}
               </tbody>
             </table>
           </div>
-        </div>
+        </motion.div>
 
-        {selectedConnector && (
-          <div className="bg-zinc-900 border border-zinc-800 rounded-md p-4">
+        <AnimatePresence>
+          {selectedConnector && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className="bg-zinc-900 border border-zinc-800 rounded-md p-4"
+          >
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-bold text-white">Connector Logs ({selectedConnector})</h3>
               <button
@@ -277,10 +323,16 @@ export default function ConnectorsPage() {
                 </p>
               ))}
             </div>
-          </div>
+          </motion.div>
         )}
+        </AnimatePresence>
 
-        <div className="bg-zinc-900 border border-zinc-800 rounded-md p-5 space-y-4">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="bg-zinc-900 border border-zinc-800 rounded-md p-5 space-y-4"
+        >
           <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <div>
               <h3 className="text-sm font-bold text-white">Tool Configuration - Tamper-Proof Webhook</h3>
@@ -368,14 +420,18 @@ export default function ConnectorsPage() {
           </div>
 
           {showSecurityDetails && (
-            <div className="rounded-md border border-zinc-700 bg-zinc-950 p-4 space-y-2">
+            <motion.div
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="rounded-md border border-zinc-700 bg-zinc-950 p-4 space-y-2"
+            >
               <p className="text-xs uppercase tracking-wider text-zinc-500">Security Details</p>
               <p className="text-sm text-zinc-200">Connector: {selectedConfig.name}</p>
               <p className="text-xs text-zinc-400">Signature: SHA-256:{apiKey.slice(0, 8)}...{apiKey.slice(-8)}</p>
               <p className="text-xs text-zinc-400">Chain of custody: {shaEnabled ? "Enabled" : "Disabled"}</p>
-            </div>
+            </motion.div>
           )}
-        </div>
+        </motion.div>
       </div>
     </DashboardLayout>
   )

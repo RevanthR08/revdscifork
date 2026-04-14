@@ -48,6 +48,19 @@
     @apply border-border;
   }
 
+  html,
+  body,
+  * {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  *::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    background: transparent;
+  }
+
   body {
     @apply bg-background text-foreground;
     font-family: 'Montserrat', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
@@ -123,6 +136,15 @@
   .scrollbar-thin {
     scrollbar-width: thin;
     scrollbar-color: hsl(240 4% 16%) transparent;
+  }
+  .scrollbar-transparent {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-transparent::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    background: transparent;
   }
   .font-montserrat {
     font-family: 'Montserrat', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;

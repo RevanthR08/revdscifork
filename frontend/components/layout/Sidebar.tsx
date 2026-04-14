@@ -9,6 +9,7 @@ import {
   AlertTriangle,
   GitBranch,
   FileText,
+  MessageSquare,
   Home,
   Settings,
   ChevronLeft,
@@ -45,6 +46,8 @@ export default function Sidebar({ analysisId, collapsed, onToggle, mobileOpen = 
 
   const mainNavItems = [
     { href: "/dashboard", label: "Dashboard", icon: Home },
+    { href: "/chat", label: "Secure Chat", icon: MessageSquare },
+    { href: "/chat-admin", label: "Chat Admin", icon: Settings },
   ]
 
   const analysisNavItems = analysisId

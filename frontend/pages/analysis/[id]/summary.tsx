@@ -239,7 +239,7 @@ export default function SummaryPage() {
         />
 
         {/* Charts Row */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <AttackRadar findings={findings} />
           <FindingsSummaryTable findings={findingsForTable} />
         </div>
@@ -304,9 +304,9 @@ export default function SummaryPage() {
             </motion.div>
 
             {/* Main Split */}
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
               {/* Left: Expandable Report */}
-              <div className="col-span-2 space-y-3">
+              <div className="xl:col-span-2 space-y-3">
                 {/* AI Report */}
                 <div className="bg-zinc-900 border border-zinc-800" style={{ borderRadius: "6px" }}>
                   <div

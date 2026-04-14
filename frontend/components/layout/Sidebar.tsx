@@ -3,16 +3,18 @@ import Link from "next/link"
 import { useRouter } from "next/router"
 import { motion, AnimatePresence } from "framer-motion"
 import {
-  Shield,
+ 
   Upload,
   BarChart3,
   AlertTriangle,
   GitBranch,
   FileText,
+  Link2,
   Home,
   Settings,
   ChevronLeft,
   ChevronRight,
+  X,
   Activity,
   Lock,
   Eye,
@@ -25,6 +27,8 @@ interface SidebarProps {
   analysisId?: string
   collapsed: boolean
   onToggle: () => void
+  mobileOpen?: boolean
+  onMobileClose?: () => void
 }
 
 const sidebarVariants = {
@@ -37,11 +41,12 @@ const itemVariants = {
   visible: { opacity: 1, x: 0 },
 }
 
-export default function Sidebar({ analysisId, collapsed, onToggle }: SidebarProps) {
+export default function Sidebar({ analysisId, collapsed, onToggle, mobileOpen = false, onMobileClose }: SidebarProps) {
   const router = useRouter()
 
   const mainNavItems = [
-    { href: "/", label: "Dashboard", icon: Home },
+    { href: "/dashboard", label: "Dashboard", icon: Home },
+    { href: "/connectors", label: "Connectors", icon: Link2 },
   ]
 
   const analysisNavItems = analysisId
@@ -61,13 +66,19 @@ export default function Sidebar({ analysisId, collapsed, onToggle }: SidebarProp
       animate={collapsed ? "collapsed" : "expanded"}
       variants={sidebarVariants}
       transition={{ duration: 0.2, ease: "easeInOut" }}
-      className="fixed left-0 top-0 h-screen bg-zinc-950 border-r border-zinc-800 z-50 flex flex-col"
+      className={cn(
+        "fixed left-0 top-0 h-screen bg-zinc-950 border-r border-zinc-800 z-50 flex flex-col",
+        "transition-transform duration-200",
+        mobileOpen ? "translate-x-0" : "-translate-x-full",
+        "lg:translate-x-0"
+      )}
     >
       {/* Header */}
       <div className="h-16 flex items-center px-4 border-b border-zinc-800">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-blue-600 flex items-center justify-center" style={{ borderRadius: "6px" }}>
-            <Shield className="w-5 h-5 text-white" />
+        <div className="flex items-center gap-3 w-full justify-between">
+          <div className="flex items-center gap-3">
+          <div className="w-9 h-9 bg-transparent flex items-center justify-center rounded-md overflow-hidden">
+            <img src="/logo.png" alt="4SIC" className="w-6 h-6 object-cover" />
           </div>
           <AnimatePresence>
             {!collapsed && (
@@ -77,10 +88,18 @@ export default function Sidebar({ analysisId, collapsed, onToggle }: SidebarProp
                 exit={{ opacity: 0, width: 0 }}
                 className="overflow-hidden whitespace-nowrap"
               >
-                <span className="font-bold text-white text-sm">Cyber Forensics</span>
+                <span className="font-montserrat font-extrabold text-white text-base leading-none">4SIC</span>
               </motion.div>
             )}
           </AnimatePresence>
+          </div>
+          <button
+            onClick={onMobileClose}
+            className="inline-flex lg:hidden items-center justify-center w-8 h-8 rounded-md border border-zinc-700 text-zinc-300"
+            aria-label="Close navigation menu"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
       </div>
 
@@ -127,6 +146,7 @@ export default function Sidebar({ analysisId, collapsed, onToggle }: SidebarProp
                       })
                     }
                   }}
+                  onClick={() => onMobileClose?.()}
                 >
                   <item.icon className="w-5 h-5 flex-shrink-0" />
                   <AnimatePresence>
@@ -190,6 +210,7 @@ export default function Sidebar({ analysisId, collapsed, onToggle }: SidebarProp
                         })
                       }
                     }}
+                    onClick={() => onMobileClose?.()}
                   >
                     <item.icon className="w-5 h-5 flex-shrink-0" />
                     <AnimatePresence>
@@ -223,9 +244,9 @@ export default function Sidebar({ analysisId, collapsed, onToggle }: SidebarProp
           onClick={() => {
             localStorage.removeItem('auth_session');
             router.push('/auth');
+            onMobileClose?.();
           }}
-          className="w-full flex items-center justify-center gap-2 px-3 py-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors duration-150"
-          style={{ borderRadius: "6px" }}
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-md text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors duration-150"
         >
           <LogOut className="w-4 h-4" />
           {!collapsed && <span className="text-sm">Logout</span>}
@@ -233,8 +254,7 @@ export default function Sidebar({ analysisId, collapsed, onToggle }: SidebarProp
 
         <button
           onClick={onToggle}
-          className="w-full flex items-center justify-center gap-2 px-3 py-2 text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors duration-150"
-          style={{ borderRadius: "6px" }}
+          className="hidden lg:flex w-full items-center justify-center gap-2 px-3 py-2 rounded-md text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors duration-150"
         >
           {collapsed ? (
             <ChevronRight className="w-4 h-4" />

@@ -50,7 +50,15 @@
 
   body {
     @apply bg-background text-foreground;
+    font-family: 'Montserrat', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
     font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
   }
 
   .light body {
@@ -59,7 +67,7 @@
 
   /* Clean version of light theme overrides */
   .light .text-white {
-    color: #3B3486 !important;
+    color: #000000 !important;
   }
 
   .light .bg-zinc-950 { background-color: #F9FAFB !important; }
@@ -67,6 +75,17 @@
   .light .bg-zinc-800 { background-color: #F3F4F6 !important; }
   .light .border-zinc-800 { border-color: #E5E7EB !important; }
   .light .border-zinc-700 { border-color: #D1D5DB !important; }
+
+  .light .text-zinc-100,
+  .light .text-zinc-200,
+  .light .text-zinc-300,
+  .light .text-zinc-400,
+  .light .text-zinc-500,
+  .light .text-zinc-600,
+  .light .text-zinc-700,
+  .light .text-muted-foreground {
+    color: #000000 !important;
+  }
 
   /* Severity Colors Light */
   .light .text-red-400 { color: #EF4444 !important; }
@@ -76,7 +95,11 @@
 
   /* Fix for sidebar and specialized backgrounds */
   .light aside [style*="background-color: rgb(59, 52, 134)"] span,
+  .light aside [style*="background-color: rgb(59, 52, 134)"] svg,
+  .light aside [style*="background-color: #3b3486"] span,
+  .light aside [style*="background-color: #3b3486"] svg,
   .light aside [style*="background-color: #3B3486"] span,
+  .light aside [style*="background-color: #3B3486"] svg,
   .light .text-white-force {
     color: #ffffff !important;
   }
@@ -100,5 +123,16 @@
   .scrollbar-thin {
     scrollbar-width: thin;
     scrollbar-color: hsl(240 4% 16%) transparent;
+  }
+  .font-montserrat {
+    font-family: 'Montserrat', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+  }
+  .logo-text {
+    letter-spacing: -0.02em;
+  }
+  .logo-align {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
   }
 }

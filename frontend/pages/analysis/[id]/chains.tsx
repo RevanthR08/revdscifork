@@ -168,7 +168,7 @@ export default function AttackChainsPage() {
           className="flex items-center justify-between"
         >
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-purple-500/10 flex items-center justify-center" style={{ borderRadius: "6px" }}>
+            <div className="w-10 h-10 bg-purple-500/10 flex items-center justify-center rounded-md">
               <GitBranch className="w-5 h-5 text-purple-400" />
             </div>
             <div>
@@ -199,7 +199,7 @@ export default function AttackChainsPage() {
             />
 
             {/* Split View */}
-            <div className="grid grid-cols-2 gap-4" style={{ minHeight: "450px" }}>
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 min-h-[450px]">
               {/* Chain List */}
               <div className="space-y-3 overflow-y-auto scrollbar-thin pr-1 max-h-[500px]">
                 {chains.map((chain, index) => (
@@ -217,7 +217,7 @@ export default function AttackChainsPage() {
               {selectedChain ? (
                 <ChainDetail chain={selectedChain} analysisId={id as string} />
               ) : (
-                <div className="bg-zinc-900 border border-zinc-800 flex items-center justify-center" style={{ borderRadius: "6px" }}>
+                <div className="bg-zinc-900 border border-zinc-800 flex items-center justify-center rounded-md">
                   <p className="text-sm text-zinc-500">Select a chain to view details</p>
                 </div>
               )}
@@ -245,10 +245,10 @@ export default function AttackChainsPage() {
                   {travels.map((travel) => (
                     <div 
                       key={travel.travel_id}
-                      className="flex items-center justify-between p-3 bg-zinc-950 border border-zinc-800/50 hover:border-zinc-700 transition-colors"
-                      style={{ borderRadius: "4px" }}
+                      className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between p-3 bg-zinc-950 border border-zinc-800/50 hover:border-zinc-700 transition-colors"
+                      
                     >
-                      <div className="flex items-center gap-4">
+                      <div className="flex flex-wrap items-center gap-4">
                         <div className="text-xs">
                           <p className="text-zinc-500">User</p>
                           <p className="text-zinc-200 font-medium">{travel.user_account}</p>

@@ -32,7 +32,7 @@ export default function SummaryPageSkeleton() {
       </div>
 
       {/* Stats skeleton */}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {[1, 2, 3, 4].map((i) => (
           <Skeleton key={i} className="h-20" />
         ))}
@@ -42,9 +42,9 @@ export default function SummaryPageSkeleton() {
       <Skeleton className="h-32" />
 
       {/* Split view skeleton */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
         {/* Main content */}
-        <div className="col-span-2 space-y-4">
+        <div className="xl:col-span-2 space-y-4">
           <Skeleton className="h-10" />
           <div className="space-y-3">
             {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (

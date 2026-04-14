@@ -92,7 +92,7 @@ export default function ChainDetail({ chain, analysisId }: ChainDetailProps) {
         )}
 
         {/* Affected Entities */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">Users</p>
             <div className="space-y-1.5">
@@ -143,7 +143,7 @@ export default function ChainDetail({ chain, analysisId }: ChainDetailProps) {
         {chain.first_event_time && chain.last_event_time && (
           <div>
             <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">Timeline</p>
-            <div className="flex items-center gap-4 bg-zinc-800/50 border border-zinc-700/50 p-4" style={{ borderRadius: "6px" }}>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4 bg-zinc-800/50 border border-zinc-700/50 p-4" style={{ borderRadius: "6px" }}>
               <div className="flex items-center gap-2 text-sm text-zinc-300">
                 <Clock className="w-4 h-4 text-zinc-500" />
                 {formatTime(chain.first_event_time)}

@@ -46,7 +46,7 @@ export default function ReportVisuals({ findings, chains, analysis }: ReportVisu
   return (
     <div className="space-y-6">
       {/* Charts Row */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Severity Pie */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
@@ -104,43 +104,45 @@ export default function ReportVisuals({ findings, chains, analysis }: ReportVisu
         <div className="p-3 border-b border-zinc-700/50">
           <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">Top Findings</p>
         </div>
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-zinc-700/50">
-              <th className="text-left text-[9px] font-medium text-zinc-500 uppercase px-3 py-2">Severity</th>
-              <th className="text-left text-[9px] font-medium text-zinc-500 uppercase px-3 py-2">Finding</th>
-              <th className="text-left text-[9px] font-medium text-zinc-500 uppercase px-3 py-2">User</th>
-              <th className="text-left text-[9px] font-medium text-zinc-500 uppercase px-3 py-2">MITRE</th>
-            </tr>
-          </thead>
-          <tbody>
-            {topFindings.map((f, i) => (
-              <tr key={i} className="border-b border-zinc-700/30">
-                <td className="px-3 py-2">
-                  <span
-                    className={cn(
-                      "text-[9px] font-bold px-1.5 py-0.5",
-                      f.severity === "critical" ? "bg-red-500 text-white" :
-                      f.severity === "high" ? "bg-orange-500 text-white" :
-                      f.severity === "medium" ? "bg-yellow-500 text-white" :
-                      "bg-blue-500 text-white"
-                    )}
-                    style={{ borderRadius: "3px" }}
-                  >
-                    {f.severity?.toUpperCase()}
-                  </span>
-                </td>
-                <td className="px-3 py-2 text-xs text-zinc-300 truncate max-w-[200px]">{f.title}</td>
-                <td className="px-3 py-2 text-xs text-zinc-400">{f.affected_users?.[0] || "-"}</td>
-                <td className="px-3 py-2">
-                  <span className="text-[9px] text-zinc-500 bg-zinc-700 px-1 py-0.5" style={{ borderRadius: "2px" }}>
-                    {f.mitre_techniques?.[0] || "-"}
-                  </span>
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[520px]">
+            <thead>
+              <tr className="border-b border-zinc-700/50">
+                <th className="text-left text-[9px] font-medium text-zinc-500 uppercase px-3 py-2">Severity</th>
+                <th className="text-left text-[9px] font-medium text-zinc-500 uppercase px-3 py-2">Finding</th>
+                <th className="text-left text-[9px] font-medium text-zinc-500 uppercase px-3 py-2">User</th>
+                <th className="text-left text-[9px] font-medium text-zinc-500 uppercase px-3 py-2">MITRE</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {topFindings.map((f, i) => (
+                <tr key={i} className="border-b border-zinc-700/30">
+                  <td className="px-3 py-2">
+                    <span
+                      className={cn(
+                        "text-[9px] font-bold px-1.5 py-0.5",
+                        f.severity === "critical" ? "bg-red-500 text-white" :
+                        f.severity === "high" ? "bg-orange-500 text-white" :
+                        f.severity === "medium" ? "bg-yellow-500 text-white" :
+                        "bg-blue-500 text-white"
+                      )}
+                      style={{ borderRadius: "3px" }}
+                    >
+                      {f.severity?.toUpperCase()}
+                    </span>
+                  </td>
+                  <td className="px-3 py-2 text-xs text-zinc-300 truncate max-w-[200px]">{f.title}</td>
+                  <td className="px-3 py-2 text-xs text-zinc-400">{f.affected_users?.[0] || "-"}</td>
+                  <td className="px-3 py-2">
+                    <span className="text-[9px] text-zinc-500 bg-zinc-700 px-1 py-0.5" style={{ borderRadius: "2px" }}>
+                      {f.mitre_techniques?.[0] || "-"}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </motion.div>
 
       {/* Attack Chain Flow */}
@@ -201,7 +203,7 @@ export default function ReportVisuals({ findings, chains, analysis }: ReportVisu
         <div className="p-3 border-b border-zinc-700/50">
           <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">Affected Assets</p>
         </div>
-        <div className="grid grid-cols-3 gap-4 p-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
           <div>
             <p className="text-[9px] text-zinc-500 uppercase mb-2">Users</p>
             {[...new Set(findings.flatMap(f => f.affected_users || []))].slice(0, 5).map((u: any) => (

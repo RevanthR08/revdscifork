@@ -94,7 +94,7 @@ export function ChainsPageSkeleton() {
   return (
     <div className="h-[calc(100vh-120px)]">
       {/* Stats skeleton */}
-      <div className="grid grid-cols-4 gap-3 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         {[1, 2, 3, 4].map((i) => (
           <motion.div
             key={i}
@@ -107,7 +107,7 @@ export function ChainsPageSkeleton() {
       </div>
 
       {/* Split view skeleton */}
-      <div className="grid grid-cols-2 gap-4 h-[calc(100%-100px)]">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 h-[calc(100%-100px)]">
         <div className="space-y-3 overflow-hidden">
           {[1, 2, 3, 4].map((i) => (
             <ChainCardSkeleton key={i} />

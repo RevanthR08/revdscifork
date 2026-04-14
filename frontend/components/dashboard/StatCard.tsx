@@ -17,31 +17,31 @@ const colorMap = {
   blue: {
     bg: "bg-blue-500/100",
     border: "border-blue-500/20",
-    icon: "text-blue-400",
+    icon: "text-white",
     value: "text-blue-400",
   },
   red: {
     bg: "bg-red-500/100",
     border: "border-red-500/20",
-    icon: "text-red-400",
+    icon: "text-white",
     value: "text-red-400",
   },
   orange: {
     bg: "bg-orange-500/100",
     border: "border-orange-500/20",
-    icon: "text-orange-400",
+    icon: "text-white",
     value: "text-orange-400",
   },
   purple: {
     bg: "bg-purple-500/100",
     border: "border-purple-500/20",
-    icon: "text-purple-400",
+    icon: "text-white",
     value: "text-purple-400",
   },
   green: {
     bg: "bg-green-500/100",
     border: "border-green-500/20",
-    icon: "text-green-400",
+    icon: "text-white",
     value: "text-green-400",
   },
 }
@@ -100,12 +100,11 @@ export default function StatCard({
         </div>
         <div
           className={cn(
-            "w-10 h-10 flex items-center justify-center",
+            "w-10 h-10 flex items-center justify-center rounded-md",
             colors.bg
           )}
-          style={{ borderRadius: "6px" }}
         >
-          <Icon className={cn("w-5 h-5", colors.icon)} />
+          <Icon className={cn("w-6 h-6 drop-shadow-sm", colors.icon)} />
         </div>
       </div>
     </motion.div>

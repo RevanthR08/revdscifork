@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { useRouter } from "next/router"
 import { cn } from "@/lib/utils"
-import { Shield, Upload, BarChart3, AlertTriangle, GitBranch, FileText, Home } from "lucide-react"
+import { BarChart3, AlertTriangle, GitBranch, FileText, Home } from "lucide-react"
 
 interface LayoutProps {
   children: React.ReactNode
@@ -25,8 +25,8 @@ export default function Layout({ children, analysisId }: LayoutProps) {
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
         <div className="container flex h-14 items-center">
           <Link href="/" className="flex items-center space-x-2 mr-6">
-            <Shield className="h-6 w-6 text-primary" />
-            <span className="font-bold text-lg">AI Cyber Forensics</span>
+            <img src="/logo.png" alt="4SIC" className="h-8 w-8 rounded-sm object-cover" />
+            <span className="font-montserrat font-extrabold text-2xl leading-none logo-text">4SIC</span>
           </Link>
 
           <nav className="flex items-center space-x-1">

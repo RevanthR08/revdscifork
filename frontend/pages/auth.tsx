@@ -5,8 +5,8 @@ export default function Auth() {
   return (
     <>
       <Head>
-        <title>Sign In | Asme Platform</title>
-        <meta name="description" content="Sign in or join Asme Platform to access your SOC dashboard and forensic analysis." />
+        <title>Sign In | 4SIC</title>
+        <meta name="description" content="Sign in to 4SIC to access your SOC dashboard and forensic analysis workspace." />
       </Head>
       <AuthPage />
     </>

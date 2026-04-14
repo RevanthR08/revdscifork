@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import {
 	AtSignIcon,
 	ChevronLeftIcon,
-	Shield,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -24,7 +23,7 @@ export function AuthPage() {
 	React.useEffect(() => {
 		const session = localStorage.getItem('auth_session');
 		if (session) {
-			router.push('/');
+			router.push('/dashboard');
 		}
 	}, [router]);
 
@@ -43,7 +42,7 @@ export function AuthPage() {
 		}));
 		
 		setLoading(false);
-		router.push('/');
+		router.push('/dashboard');
 	};
 
 	return (
@@ -51,8 +50,8 @@ export function AuthPage() {
 			<div className="bg-muted/60 relative hidden h-full flex-col border-r p-10 lg:flex">
 				<div className="from-background absolute inset-0 z-10 bg-gradient-to-t to-transparent" />
 				<div className="z-10 flex items-center gap-2">
-					<Shield className="size-6 text-blue-500" />
-					<p className="text-xl font-bold text-foreground tracking-tight">Cyber Forensic <span className="text-blue-500">SOC</span></p>
+					<img src="/logo.png" alt="4SIC" className="w-10 h-10" />
+					<p className="font-montserrat text-2xl font-extrabold text-foreground tracking-tight leading-none">4SIC <span className="text-blue-500"></span></p>
 				</div>
 				<div className="z-10 mt-auto text-foreground">
 					<blockquote className="space-y-2">
@@ -86,8 +85,8 @@ export function AuthPage() {
 				</Button>
 				<div className="mx-auto space-y-6 w-full max-w-[280px]">
 					<div className="flex items-center gap-2 lg:hidden">
-						<Shield className="size-5 text-blue-500" />
-						<p className="text-lg font-bold">Cyber Forensics</p>
+						<img src="/logo.png" alt="4SIC" className="w-7 h-7" />
+						<p className="font-montserrat text-xl font-extrabold">4SIC</p>
 					</div>
 					<div className="flex flex-col space-y-1">
 						<h1 className="font-heading text-xl font-bold tracking-tight">

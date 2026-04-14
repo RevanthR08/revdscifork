@@ -209,7 +209,7 @@ export default function FindingCard({ finding, index }: FindingCardProps) {
               )}
 
               {/* Affected Entities */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {finding.affected_users && finding.affected_users.length > 0 && (
                   <Section title={`Affected Users (${finding.affected_users.length})`}>
                     <div className="flex flex-wrap gap-1.5">

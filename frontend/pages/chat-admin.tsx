@@ -1,7 +1,7 @@
 import React, { FormEvent, useEffect, useMemo, useRef, useState } from "react"
 import DashboardLayout from "@/components/layout/DashboardLayout"
 import { motion } from "framer-motion"
-import { ShieldCheck, Users, Plus, FileText, GitBranch, Save } from "lucide-react"
+import { ShieldCheck, Users, Plus, FileText, GitBranch, Save, Trash2 } from "lucide-react"
 import {
   type ChatGroup,
   type ChatMessage,
@@ -361,6 +361,39 @@ export default function ChatAdminPage() {
     }
   }
 
+  const handleDeleteGroup = async (groupId: string) => {
+    const group = groups.find((item) => item.id === groupId)
+    if (!group) return
+
+    const confirmed = window.confirm(`Delete chat "${group.name}"? This removes the group and all of its messages.`)
+    if (!confirmed) return
+
+    try {
+      const response = await fetch(`/api/chat/groups/${encodeURIComponent(groupId)}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      })
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => null)
+        throw new Error(data?.error || `Delete failed with status ${response.status}`)
+      }
+
+      setGroups((prev) => {
+        const next = prev.filter((item) => item.id !== groupId)
+        if (selectedGroupId === groupId) {
+          setSelectedGroupId(next[0]?.id || "")
+        }
+        return next
+      })
+      setMessages((prev) => prev.filter((message) => message.groupId !== groupId))
+      setStatus(`Chat ${group.name} deleted.`)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Chat delete failed"
+      setStatus(message)
+    }
+  }
+
   const addMember = () => {
     if (!selectedGroup || !memberToAdd) return
     if (selectedGroup.members.includes(memberToAdd)) return
@@ -533,17 +566,33 @@ export default function ChatAdminPage() {
 
             <div className="space-y-1">
               {groups.map((group) => (
-                <button
+                <div
                   key={group.id}
-                  onClick={() => setSelectedGroupId(group.id)}
                   className={cn(
-                    "w-full rounded-md border px-3 py-2 text-left",
+                    "w-full rounded-md border px-3 py-2 text-left flex items-start justify-between gap-2",
                     selectedGroupId === group.id ? "border-[#3b3486] bg-[#3b3486]/20" : "border-zinc-800 bg-zinc-950"
                   )}
                 >
-                  <p className="text-sm font-semibold text-white">{group.name}</p>
-                  <p className="text-[11px] text-zinc-500">{group.members.length} members • {messages.filter((m) => m.groupId === group.id).length} messages</p>
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedGroupId(group.id)}
+                    className="min-w-0 flex-1 text-left"
+                  >
+                    <p className="text-sm font-semibold text-white">{group.name}</p>
+                    <p className="text-[11px] text-zinc-500">
+                      {group.members.length} members • {messages.filter((m) => m.groupId === group.id).length} messages
+                    </p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleDeleteGroup(group.id)}
+                    className="mt-0.5 inline-flex h-8 w-8 items-center justify-center rounded-md border border-red-500/30 bg-red-500/10 text-red-200 hover:bg-red-500/20"
+                    title={`Delete ${group.name}`}
+                    aria-label={`Delete ${group.name}`}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
               ))}
             </div>
           </motion.aside>

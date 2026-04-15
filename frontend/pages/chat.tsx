@@ -16,6 +16,7 @@ import {
   X,
   Users,
   Send,
+  Download,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
@@ -56,6 +57,7 @@ export default function ChatPage() {
   const [text, setText] = useState("")
   const [replyToMessageId, setReplyToMessageId] = useState<string | null>(null)
   const [attachment, setAttachment] = useState<MediaAttachment | undefined>(undefined)
+  const [viewerAttachment, setViewerAttachment] = useState<MediaAttachment | null>(null)
   const [newGroupName, setNewGroupName] = useState("")
   const [newGroupMembers, setNewGroupMembers] = useState<string[]>([currentUserId])
   const [createOpen, setCreateOpen] = useState(false)
@@ -423,16 +425,23 @@ export default function ChatPage() {
     })
 
     console.log(`[${currentUserId}] Sending message to group ${selectedGroup.id}:`, payload.text)
-    setMessages((prev) => [...prev, message])
-    syncRef.current?.publishMessage(message)
-    void refreshGroupMessages(selectedGroup.id)
-    void fetch("/api/chat/messages", {
+    const saveResponse = await fetch("/api/chat/messages", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message }),
     }).catch((error) => {
       console.error("Chat backend save failed:", error)
+      return null
     })
+
+    if (!saveResponse || !saveResponse.ok) {
+      setInfoBanner("Message could not be saved to Supabase.")
+      return
+    }
+
+    setMessages((prev) => [...prev, message])
+    syncRef.current?.publishMessage(message)
+    void refreshGroupMessages(selectedGroup.id)
     setText("")
     setReplyToMessageId(null)
     setAttachment(undefined)
@@ -482,6 +491,37 @@ export default function ChatPage() {
     return groupMessages.find((m) => m.id === replyToMessageId) ?? null
   }, [groupMessages, replyToMessageId])
 
+  const decodeTextDataUrl = (dataUrl: string) => {
+    try {
+      const raw = dataUrl.split(",")[1] || ""
+      const atobFn = typeof window !== "undefined" ? window.atob : globalThis.atob
+      if (!atobFn) return "Unable to decode text content."
+      const bytes = Uint8Array.from(atobFn(raw), (char) => char.charCodeAt(0))
+      return new TextDecoder().decode(bytes)
+    } catch {
+      return "Unable to decode text content."
+    }
+  }
+
+  const viewerKind = useMemo(() => {
+    if (!viewerAttachment) return "file"
+    if (viewerAttachment.mimeType.startsWith("image/")) return "image"
+    if (viewerAttachment.mimeType.startsWith("video/")) return "video"
+    if (viewerAttachment.mimeType === "application/pdf" || viewerAttachment.name.toLowerCase().endsWith(".pdf")) return "pdf"
+    if (
+      viewerAttachment.mimeType.startsWith("text/") ||
+      /\.(txt|log|csv|json|md|xml|yaml|yml|ini|conf|env)$/i.test(viewerAttachment.name)
+    ) {
+      return "text"
+    }
+    return "file"
+  }, [viewerAttachment])
+
+  const viewerText = useMemo(() => {
+    if (!viewerAttachment || viewerKind !== "text") return ""
+    return decodeTextDataUrl(viewerAttachment.dataUrl)
+  }, [viewerAttachment, viewerKind])
+
   const canRender = users.length > 0 && groups.length > 0
 
   const importedChains = useMemo(() => {
@@ -524,6 +564,25 @@ export default function ChatPage() {
 
     setText((prev) => (prev.trim() ? `${prev}\n\n${importText}` : importText))
     setInfoBanner(`Report detail imported into composer.`)
+  }
+
+  const openAttachmentViewer = (media: MediaAttachment) => {
+    setViewerAttachment(media)
+  }
+
+  const closeAttachmentViewer = () => {
+    setViewerAttachment(null)
+  }
+
+  const downloadAttachment = () => {
+    if (!viewerAttachment) return
+    const link = document.createElement("a")
+    link.href = viewerAttachment.dataUrl
+    link.download = viewerAttachment.name
+    link.rel = "noopener noreferrer"
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
   }
 
   return (
@@ -743,21 +802,30 @@ export default function ChatPage() {
                             <>
                               {decrypted?.payload?.text && <p className="mt-2 text-sm text-zinc-200 whitespace-pre-wrap">{decrypted.payload.text}</p>}
                               {decrypted?.payload?.media && (
-                                <div className="mt-2 rounded-md border border-zinc-700 p-2 bg-zinc-900">
-                                  {decrypted.payload.media.mimeType.startsWith("image/") && (
-                                    <img src={decrypted.payload.media.dataUrl} alt={decrypted.payload.media.name} className="max-h-56 rounded-md" />
-                                  )}
-                                  {decrypted.payload.media.mimeType.startsWith("video/") && (
-                                    <video controls className="max-h-56 rounded-md">
-                                      <source src={decrypted.payload.media.dataUrl} type={decrypted.payload.media.mimeType} />
-                                    </video>
-                                  )}
-                                  {!decrypted.payload.media.mimeType.startsWith("image/") && !decrypted.payload.media.mimeType.startsWith("video/") && (
-                                    <a href={decrypted.payload.media.dataUrl} download={decrypted.payload.media.name} className="text-xs text-sky-300 hover:text-sky-200">
-                                      Download {decrypted.payload.media.name}
-                                    </a>
-                                  )}
-                                </div>
+                                (() => {
+                                  const media = decrypted.payload?.media
+                                  if (!media) return null
+                                  return (
+                                <button
+                                  type="button"
+                                  onClick={() => openAttachmentViewer(media)}
+                                  className="mt-2 block w-full rounded-md border border-zinc-700 bg-zinc-900 p-2 text-left transition-colors hover:border-sky-500/50 hover:bg-zinc-800/80"
+                                >
+                                  <div className="flex items-center gap-2 text-xs text-zinc-300">
+                                    {media.mimeType.startsWith("image/") ? (
+                                      <ImageIcon className="w-3.5 h-3.5" />
+                                    ) : media.mimeType.startsWith("video/") ? (
+                                      <Video className="w-3.5 h-3.5" />
+                                    ) : (
+                                      <FileText className="w-3.5 h-3.5" />
+                                    )}
+                                    <span className="truncate">{media.name}</span>
+                                    <span className="text-zinc-500">Open preview</span>
+                                  </div>
+                                  <p className="mt-1 text-[11px] text-zinc-500">Click to view in a popup and download.</p>
+                                </button>
+                                  )
+                                })()
                               )}
                             </>
                           )}
@@ -884,6 +952,69 @@ export default function ChatPage() {
           </div>
         )}
       </div>
+
+      {viewerAttachment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6">
+          <div className="w-full max-w-5xl rounded-xl border border-zinc-700 bg-zinc-950 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-3">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-white">{viewerAttachment.name}</p>
+                <p className="text-[11px] text-zinc-500">{viewerAttachment.mimeType}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={downloadAttachment}
+                  className="inline-flex items-center gap-1 rounded-md border border-sky-500/40 bg-sky-500/10 px-3 py-2 text-xs font-semibold text-sky-200 hover:bg-sky-500/20"
+                >
+                  <Download className="h-3.5 w-3.5" /> Download
+                </button>
+                <button
+                  type="button"
+                  onClick={closeAttachmentViewer}
+                  className="rounded-md border border-zinc-700 px-2.5 py-2 text-zinc-300 hover:text-white"
+                  aria-label="Close attachment viewer"
+                  title="Close"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+
+            <div className="max-h-[75vh] overflow-auto p-4">
+              {viewerKind === "image" && (
+                <img src={viewerAttachment.dataUrl} alt={viewerAttachment.name} className="mx-auto max-h-[70vh] w-auto rounded-lg object-contain" />
+              )}
+
+              {viewerKind === "video" && (
+                <video controls autoPlay className="mx-auto max-h-[70vh] w-full rounded-lg bg-black">
+                  <source src={viewerAttachment.dataUrl} type={viewerAttachment.mimeType} />
+                </video>
+              )}
+
+              {viewerKind === "pdf" && (
+                <iframe
+                  title={viewerAttachment.name}
+                  src={viewerAttachment.dataUrl}
+                  className="h-[70vh] w-full rounded-lg border border-zinc-800 bg-white"
+                />
+              )}
+
+              {viewerKind === "text" && (
+                <pre className="whitespace-pre-wrap break-words rounded-lg border border-zinc-800 bg-zinc-900 p-4 text-sm leading-6 text-zinc-200">
+                  {viewerText}
+                </pre>
+              )}
+
+              {viewerKind === "file" && (
+                <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-4 text-sm text-zinc-300">
+                  This file type cannot be previewed here. Use download to open it locally.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   )
 }

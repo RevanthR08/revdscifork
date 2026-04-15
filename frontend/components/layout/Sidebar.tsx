@@ -22,6 +22,7 @@ import {
 import ThemeToggle from "./ThemeToggle"
 import { cn } from "@/lib/utils"
 import { LogOut } from "lucide-react"
+import { clearAuthSession, getAuthSession } from "@/lib/authSession"
 
 interface SidebarProps {
   analysisId?: string
@@ -43,11 +44,17 @@ const itemVariants = {
 
 export default function Sidebar({ analysisId, collapsed, onToggle, mobileOpen = false, onMobileClose }: SidebarProps) {
   const router = useRouter()
+  const [role, setRole] = useState<"admin" | "user">("user")
+
+  React.useEffect(() => {
+    const session = getAuthSession()
+    setRole(session?.role === "admin" ? "admin" : "user")
+  }, [])
 
   const mainNavItems = [
     { href: "/dashboard", label: "Dashboard", icon: Home },
     { href: "/chat", label: "Secure Chat", icon: MessageSquare },
-    { href: "/chat-admin", label: "Chat Admin", icon: Settings },
+    ...(role === "admin" ? [{ href: "/chat-admin", label: "Chat Admin", icon: Settings }] : []),
   ]
 
   const analysisNavItems = analysisId
@@ -243,7 +250,7 @@ export default function Sidebar({ analysisId, collapsed, onToggle, mobileOpen = 
         </div>
         <button
           onClick={() => {
-            localStorage.removeItem('auth_session');
+            clearAuthSession();
             router.push('/auth');
             onMobileClose?.();
           }}

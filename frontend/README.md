@@ -167,11 +167,20 @@ Create a `.env.local` file in the `frontend/` directory:
 NEXT_PUBLIC_API_URL=http://localhost:8000
 
 # Supabase credentials (needed if using Supabase client directly)
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+SUPABASE_DATABASE_URL=postgresql://user:password@db.host:5432/postgres?sslmode=require
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
 ```
 
 > ⚠️ **Important:** Never commit `.env.local` to version control. It's already in `.gitignore`.
+
+If you want to deploy the chat schema directly to your Supabase database, add `SUPABASE_DATABASE_URL` and run:
+
+```bash
+npm run push-schema
+```
 
 ---
 

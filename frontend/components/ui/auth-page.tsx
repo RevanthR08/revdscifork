@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { authenticateByEmail, getAuthSession, saveAuthSession } from '@/lib/authSession';
 
 import { useRouter } from 'next/router';
 
@@ -18,32 +19,48 @@ export function AuthPage() {
 	const [email, setEmail] = React.useState('');
 	const [password, setPassword] = React.useState('');
 	const [loading, setLoading] = React.useState(false);
+	const [error, setError] = React.useState('');
+	const [checkingSession, setCheckingSession] = React.useState(true);
 
 	// Check if already logged in on mount
 	React.useEffect(() => {
-		const session = localStorage.getItem('auth_session');
+		const session = getAuthSession();
 		if (session) {
-			router.push('/dashboard');
+			router.replace('/dashboard');
+			return;
 		}
+		setCheckingSession(false);
 	}, [router]);
 
 	const handleLogin = async (e: React.FormEvent) => {
 		e.preventDefault();
-		if (!email || !password) return;
+		if (!email || !password || loading) return;
 		
 		setLoading(true);
+		setError('');
 		// Simulate API call
 		await new Promise((res) => setTimeout(res, 800));
-		
-		localStorage.setItem('auth_session', JSON.stringify({
-			email,
-			name: email.split('@')[0],
-			lastLogin: new Date().toISOString()
-		}));
+
+		const session = authenticateByEmail(email, password);
+		if (!session) {
+			setLoading(false);
+			setError('Invalid credentials. Use allowed admin/user emails.');
+			return;
+		}
+
+		saveAuthSession(session);
 		
 		setLoading(false);
-		router.push('/dashboard');
+		router.replace('/dashboard');
 	};
+
+	if (checkingSession) {
+		return (
+			<main className="min-h-screen bg-background flex items-center justify-center">
+				<div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" aria-label="Checking session" />
+			</main>
+		);
+	}
 
 	return (
 		<main className="relative md:h-screen md:overflow-hidden lg:grid lg:grid-cols-2">
@@ -130,6 +147,11 @@ export function AuthPage() {
 						<Button type="submit" className="w-full h-9 text-xs font-semibold" disabled={loading}>
 							<span>{loading ? 'Authenticating...' : 'Sign In'}</span>
 						</Button>
+						{error && <p className="text-xs text-red-400">{error}</p>}
+						<div className="rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-[11px] text-zinc-400 space-y-1">
+							<p>Admin: admin@4sic.local / Admin@123</p>
+							<p>User: analyst@4sic.local / User@123</p>
+						</div>
 					</form>
 					<p className="text-zinc-600 mt-8 text-[10px] leading-relaxed">
 						Access restricted to authorized personnel. All activities are monitored and logged. See our{' '}

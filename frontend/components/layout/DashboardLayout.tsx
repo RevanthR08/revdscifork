@@ -4,6 +4,7 @@ import { useRouter } from "next/router"
 import { motion } from "framer-motion"
 import { Menu } from "lucide-react"
 import Sidebar from "./Sidebar"
+import { getAuthSession } from "@/lib/authSession"
 
 interface DashboardLayoutProps {
   children: React.ReactNode
@@ -20,7 +21,7 @@ export default function DashboardLayout({ children, analysisId }: DashboardLayou
 
   useEffect(() => {
     // Immediate check on mount
-    const session = localStorage.getItem('auth_session')
+    const session = getAuthSession()
     if (!session) {
       router.push('/auth')
     } else {

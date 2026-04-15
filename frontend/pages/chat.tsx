@@ -1,4 +1,4 @@
-import React, { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react"
+import React, { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react"
 import DashboardLayout from "@/components/layout/DashboardLayout"
 import { motion } from "framer-motion"
 import {
@@ -27,12 +27,18 @@ import {
   createGroup,
   createSignedMessage,
   getCurrentUserId,
+  isAdminUser,
   loadSecureChatState,
   saveSecureChatState,
   verifyAndDecryptMessage,
+  getSecureChatSerializedState,
+  loadSecureChatStateFromSerialized,
+  storeSecureChatSerializedState,
 } from "@/lib/secureChatStore"
+import { createChatSyncClient } from "@/lib/chatSync"
+import { getAuthSession } from "@/lib/authSession"
+import { useRouter } from "next/router"
 
-const CURRENT_USER = getCurrentUserId()
 const EMOJIS = ["👍", "🔥", "✅", "🚨", "👀"]
 
 function getSender(users: ChatUser[], id: string) {
@@ -40,6 +46,9 @@ function getSender(users: ChatUser[], id: string) {
 }
 
 export default function ChatPage() {
+  const router = useRouter()
+  const currentUserId = getCurrentUserId()
+  const isAdmin = isAdminUser(currentUserId)
   const [users, setUsers] = useState<ChatUser[]>([])
   const [groups, setGroups] = useState<ChatGroup[]>([])
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -48,37 +57,102 @@ export default function ChatPage() {
   const [replyToMessageId, setReplyToMessageId] = useState<string | null>(null)
   const [attachment, setAttachment] = useState<MediaAttachment | undefined>(undefined)
   const [newGroupName, setNewGroupName] = useState("")
-  const [newGroupMembers, setNewGroupMembers] = useState<string[]>([CURRENT_USER])
+  const [newGroupMembers, setNewGroupMembers] = useState<string[]>([currentUserId])
   const [createOpen, setCreateOpen] = useState(false)
-  const [infoBanner, setInfoBanner] = useState<string>("")
+  const [infoBanner, setInfoBanner] = useState<string>("Checking auth...")
+  const [relayConnected, setRelayConnected] = useState(false)
+  const [isStateLoaded, setIsStateLoaded] = useState(false)
+  const latestSnapshotRef = useRef({ users: [] as ChatUser[], groups: [] as ChatGroup[], messages: [] as ChatMessage[], selectedGroupId: "" })
+  const syncRef = useRef<ReturnType<typeof createChatSyncClient> | null>(null)
+  const skipNextSaveRef = useRef(false)
+  const skipNextPublishRef = useRef(false)
+
+  const refreshGroupMessages = async (groupId: string) => {
+    if (!groupId) return
+    try {
+      const res = await fetch(`/api/chat/messages?groupId=${encodeURIComponent(groupId)}`)
+      if (!res.ok) return
+      const data = await res.json()
+      if (!Array.isArray(data.messages)) return
+
+      setMessages((prev) => {
+        const merged = new Map<string, typeof prev[number]>()
+        for (const message of prev) merged.set(message.id, message)
+        for (const message of data.messages) merged.set(message.id, message)
+        return Array.from(merged.values()).sort((a, b) => a.sentAt - b.sentAt)
+      })
+    } catch {
+      // ignore transient refresh failures
+    }
+  }
+
+  const visibleGroups = useMemo(
+    () => groups.filter((g) => g.members.includes(currentUserId)),
+    [groups, currentUserId]
+  )
 
   const selectedGroup = useMemo(
-    () => groups.find((g) => g.id === selectedGroupId) ?? null,
-    [groups, selectedGroupId]
+    () => visibleGroups.find((g) => g.id === selectedGroupId) ?? visibleGroups[0] ?? null,
+    [visibleGroups, selectedGroupId]
   )
 
   const groupMessages = useMemo(() => {
     return messages
-      .filter((m) => m.groupId === selectedGroupId)
+        .filter((m) => m.groupId === (selectedGroup?.id || ""))
       .sort((a, b) => a.sentAt - b.sentAt)
-  }, [messages, selectedGroupId])
+      }, [messages, selectedGroup])
 
   const [decryptedById, setDecryptedById] = useState<Record<string, DecryptedMessage>>({})
 
+  // Auth check
+  useEffect(() => {
+    const session = getAuthSession()
+    if (!session) {
+      router.push("/auth")
+      return
+    }
+    setInfoBanner(`Logged in as ${session.name} (${session.role}) | User ID: ${currentUserId}`)
+  }, [router, currentUserId])
+
   useEffect(() => {
     let mounted = true
-    loadSecureChatState()
-      .then((state) => {
+
+    const hydrateChat = async () => {
+      try {
+        const res = await fetch("/api/chat/state")
+        if (res.ok) {
+          const data = await res.json()
+          if (Array.isArray(data.users) && Array.isArray(data.groups) && Array.isArray(data.messages) && data.groups.length) {
+            if (!mounted) return
+            setUsers(data.users)
+            setGroups(data.groups)
+            setMessages(data.messages)
+            setSelectedGroupId(data.selectedGroupId || data.groups[0]?.id || "")
+            setIsStateLoaded(true)
+            setInfoBanner("Loaded chat state from Supabase backend.")
+            return
+          }
+        }
+      } catch {
+        // fall back to local state below
+      }
+
+      try {
+        const state = await loadSecureChatState()
         if (!mounted) return
         setUsers(state.users)
         setGroups(state.groups)
         setMessages(state.messages)
         setSelectedGroupId(state.selectedGroupId)
-        setInfoBanner("Secure mode enabled: AES-GCM encryption + ECDSA signatures.")
-      })
-      .catch(() => {
-      setInfoBanner("Secure chat initialization failed. Please refresh.")
-    })
+        setIsStateLoaded(true)
+        setInfoBanner("Loaded local chat state.")
+      } catch {
+        if (!mounted) return
+        setInfoBanner("Secure chat initialization failed. Please refresh.")
+      }
+    }
+
+    void hydrateChat()
 
     return () => {
       mounted = false
@@ -86,7 +160,103 @@ export default function ChatPage() {
   }, [])
 
   useEffect(() => {
+    if (!isStateLoaded || !selectedGroupId) return
+
+    const controller = new AbortController()
+    void refreshGroupMessages(selectedGroupId)
+
+    return () => {
+      controller.abort()
+    }
+  }, [isStateLoaded, selectedGroupId])
+
+  useEffect(() => {
+    if (!isStateLoaded) return
+
+    const sync = createChatSyncClient({
+      getSnapshot: () => {
+        const state = JSON.stringify(latestSnapshotRef.current)
+        storeSecureChatSerializedState(state)
+        return state
+      },
+      onMessage: (message) => {
+        skipNextPublishRef.current = true
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === message.id)) return prev
+          return [...prev, message]
+        })
+        void refreshGroupMessages(message.groupId)
+        setInfoBanner(`✓ Message received from peer | User: ${currentUserId}`)
+      },
+      onSnapshot: (serializedState) => {
+        skipNextSaveRef.current = true
+        skipNextPublishRef.current = true
+        storeSecureChatSerializedState(serializedState)
+        loadSecureChatStateFromSerialized(serializedState)
+          .then((state) => {
+            setUsers(state.users)
+            setGroups(state.groups)
+            setMessages(state.messages)
+            setSelectedGroupId(state.selectedGroupId)
+            setInfoBanner(`✓ Update from peer | User: ${currentUserId} | Messages: ${state.messages.length}`)
+          })
+          .catch(() => {
+            setInfoBanner("Received invalid sync payload.")
+          })
+      },
+      onStatus: (status) => {
+        if (status.includes("Connected")) {
+          setRelayConnected(true)
+          setInfoBanner(`✓ Relay connected | User: ${currentUserId}`)
+        } else {
+          setRelayConnected(status.includes("connected"))
+          setInfoBanner(status)
+        }
+      },
+    })
+
+    syncRef.current = sync
+    sync.connect()
+    setRelayConnected(true)
+    return () => {
+      sync.disconnect()
+      syncRef.current = null
+      setRelayConnected(false)
+    }
+  }, [isStateLoaded, currentUserId])
+
+  useEffect(() => {
+    latestSnapshotRef.current = { users, groups, messages, selectedGroupId }
+  }, [users, groups, messages, selectedGroupId])
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      const serialized = getSecureChatSerializedState()
+      if (!serialized) return
+      loadSecureChatStateFromSerialized(serialized)
+        .then((state) => {
+          setUsers(state.users)
+          setGroups(state.groups)
+          setMessages(state.messages)
+          setSelectedGroupId((prev) => prev || state.selectedGroupId)
+          console.log(`[${currentUserId}] Periodic sync: ${state.messages.length} messages, ${state.groups.length} groups`)
+        })
+        .catch(() => {
+          // ignore transient parse failures
+        })
+    }, 1500)
+
+    return () => window.clearInterval(timer)
+  }, [currentUserId])
+
+  useEffect(() => {
     if (!users.length || !groups.length) return
+
+    if (skipNextSaveRef.current) {
+      skipNextSaveRef.current = false
+      return
+    }
+
     saveSecureChatState({
       users,
       groups,
@@ -94,6 +264,51 @@ export default function ChatPage() {
       selectedGroupId,
     })
   }, [users, groups, messages, selectedGroupId])
+
+  useEffect(() => {
+    if (!users.length || !groups.length) return
+
+    if (skipNextPublishRef.current) {
+      skipNextPublishRef.current = false
+      return
+    }
+
+    const state = {
+      users,
+      groups,
+      messages,
+      selectedGroupId,
+    }
+
+    const serialized = JSON.stringify(state)
+    syncRef.current?.publishSnapshot(serialized)
+    console.log(`[${currentUserId}] publishing snapshot: ${messages.length} messages, group ${selectedGroupId}`)
+  }, [users, groups, messages, selectedGroupId, currentUserId])
+
+  useEffect(() => {
+    if (!isStateLoaded || !users.length || !groups.length) return
+
+    const state = {
+      users,
+      groups,
+      messages,
+      selectedGroupId,
+    }
+
+    void fetch("/api/chat/state", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(state),
+    }).catch(() => {
+      setInfoBanner("Could not persist chat state to Supabase.")
+    })
+  }, [isStateLoaded, users, groups, messages, selectedGroupId])
+
+  useEffect(() => {
+    if (!selectedGroupId && visibleGroups[0]) {
+      setSelectedGroupId(visibleGroups[0].id)
+    }
+  }, [visibleGroups, selectedGroupId])
 
   useEffect(() => {
     let active = true
@@ -140,18 +355,28 @@ export default function ChatPage() {
       return
     }
 
-    const group = await createGroup({
-      name: cleanName,
-      members: Array.from(new Set(newGroupMembers)),
-      ownerUserId: CURRENT_USER,
-    })
+    if (!isAdmin) {
+      setInfoBanner("Only admin can create groups.")
+      return
+    }
 
-    setGroups((prev) => [group, ...prev])
-    setSelectedGroupId(group.id)
-    setNewGroupName("")
-    setNewGroupMembers([CURRENT_USER])
-    setCreateOpen(false)
-    setInfoBanner(`Group ${cleanName} created with E2E key material.`)
+    try {
+      const group = await createGroup({
+        name: cleanName,
+        members: Array.from(new Set(newGroupMembers)),
+        ownerUserId: currentUserId,
+      })
+
+      setGroups((prev) => [group, ...prev])
+      setSelectedGroupId(group.id)
+      setNewGroupName("")
+      setNewGroupMembers([currentUserId])
+      setCreateOpen(false)
+      setInfoBanner(`Group ${cleanName} created with E2E key material.`)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Group creation failed"
+      setInfoBanner(message)
+    }
   }
 
   const onPickMedia = (event: ChangeEvent<HTMLInputElement>) => {
@@ -159,8 +384,8 @@ export default function ChatPage() {
     event.target.value = ""
     if (!file) return
 
-    if (file.size > 2 * 1024 * 1024) {
-      setInfoBanner("Media size limit is 2MB for this demo.")
+    if (file.size > 20 * 1024 * 1024) {
+      setInfoBanner("Media size limit is 20MB for LAN chat.")
       return
     }
 
@@ -182,7 +407,7 @@ export default function ChatPage() {
     if (!selectedGroup) return
     if (!text.trim() && !attachment) return
 
-    const me = users.find((u) => u.id === CURRENT_USER)
+    const me = users.find((u) => u.id === currentUserId)
     if (!me) return
 
     const payload = {
@@ -197,11 +422,21 @@ export default function ChatPage() {
       replyToMessageId: replyToMessageId ?? undefined,
     })
 
+    console.log(`[${currentUserId}] Sending message to group ${selectedGroup.id}:`, payload.text)
     setMessages((prev) => [...prev, message])
+    syncRef.current?.publishMessage(message)
+    void refreshGroupMessages(selectedGroup.id)
+    void fetch("/api/chat/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message }),
+    }).catch((error) => {
+      console.error("Chat backend save failed:", error)
+    })
     setText("")
     setReplyToMessageId(null)
     setAttachment(undefined)
-    setInfoBanner("Encrypted message sent and signature attached.")
+    setInfoBanner(`✓ Message sent from ${me.name}`)
   }
 
   const toggleReaction = (messageId: string, emoji: string) => {
@@ -209,12 +444,12 @@ export default function ChatPage() {
       prev.map((m) => {
         if (m.id !== messageId) return m
         const existing = m.reactions[emoji] ?? []
-        const hasMine = existing.includes(CURRENT_USER)
+        const hasMine = existing.includes(currentUserId)
         return {
           ...m,
           reactions: {
             ...m.reactions,
-            [emoji]: hasMine ? existing.filter((uid) => uid !== CURRENT_USER) : [...existing, CURRENT_USER],
+            [emoji]: hasMine ? existing.filter((uid) => uid !== currentUserId) : [...existing, currentUserId],
           },
         }
       })
@@ -254,6 +489,11 @@ export default function ChatPage() {
     return [...selectedGroup.metadata.attackChains].sort((a, b) => b.addedAt - a.addedAt)
   }, [selectedGroup])
 
+  const importedReports = useMemo(() => {
+    if (!selectedGroup) return []
+    return [...selectedGroup.metadata.reportDetails].sort((a, b) => b.addedAt - a.addedAt)
+  }, [selectedGroup])
+
   const importChainToComposer = (chainId: string) => {
     if (!selectedGroup) return
     const chain = selectedGroup.metadata.attackChains.find((item) => item.id === chainId)
@@ -268,6 +508,22 @@ export default function ChatPage() {
 
     setText((prev) => (prev.trim() ? `${prev}\n\n${importText}` : importText))
     setInfoBanner(`Attack chain ${chain.chainId} imported into composer.`)
+  }
+
+  const importReportToComposer = (reportId: string) => {
+    if (!selectedGroup) return
+    const report = selectedGroup.metadata.reportDetails.find((item) => item.id === reportId)
+    if (!report) return
+
+    const importText = [
+      `Imported Report Detail: ${report.title}`,
+      `Scan: ${report.scanId}`,
+      `Finding: ${report.findingId || "N/A"}`,
+      `Details: ${report.details}`,
+    ].join("\n")
+
+    setText((prev) => (prev.trim() ? `${prev}\n\n${importText}` : importText))
+    setInfoBanner(`Report detail imported into composer.`)
   }
 
   return (
@@ -301,15 +557,17 @@ export default function ChatPage() {
                 <h2 className="text-sm font-bold text-white inline-flex items-center gap-2">
                   <Users className="w-4 h-4" /> Groups
                 </h2>
-                <button
-                  onClick={() => setCreateOpen((v) => !v)}
-                  className="inline-flex items-center gap-1 rounded-md bg-[#3b3486] px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-[#4a439b]"
-                >
-                  <Plus className="w-3.5 h-3.5" /> New
-                </button>
+                {isAdmin && (
+                  <button
+                    onClick={() => setCreateOpen((v) => !v)}
+                    className="inline-flex items-center gap-1 rounded-md bg-[#3b3486] px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-[#4a439b]"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> New
+                  </button>
+                )}
               </div>
 
-              {createOpen && (
+              {createOpen && isAdmin && (
                 <form onSubmit={handleCreateGroup} className="rounded-md border border-zinc-700 bg-zinc-950 p-3 space-y-2">
                   <input
                     value={newGroupName}
@@ -326,7 +584,7 @@ export default function ChatPage() {
                           key={u.id}
                           type="button"
                           onClick={() => {
-                            if (u.id === CURRENT_USER) return
+                            if (u.id === currentUserId) return
                             setNewGroupMembers((prev) =>
                               selected ? prev.filter((id) => id !== u.id) : [...prev, u.id]
                             )
@@ -348,7 +606,7 @@ export default function ChatPage() {
               )}
 
               <div className="space-y-1">
-                {groups.map((g) => {
+                {visibleGroups.map((g) => {
                   const active = g.id === selectedGroupId
                   return (
                     <button
@@ -403,6 +661,31 @@ export default function ChatPage() {
                 </div>
               )}
 
+              {importedReports.length > 0 && (
+                <div className="border-b border-zinc-800 p-3 bg-zinc-950/40">
+                  <p className="text-[11px] uppercase tracking-wider text-zinc-500 mb-2 inline-flex items-center gap-1">
+                    <FileText className="w-3.5 h-3.5" /> Imported Report Details
+                  </p>
+                  <div className="space-y-2">
+                    {importedReports.slice(0, 6).map((report) => (
+                      <div key={report.id} className="rounded-md border border-zinc-700 bg-zinc-900 p-2 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                        <div className="min-w-0">
+                          <p className="text-xs font-semibold text-white truncate">{report.title}</p>
+                          <p className="text-[11px] text-zinc-400 truncate">{report.scanId} • {report.findingId || "General"}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => importReportToComposer(report.id)}
+                          className="rounded-md border border-[#3b3486] bg-[#3b3486]/20 px-2.5 py-1 text-xs font-semibold text-white hover:bg-[#3b3486]/35"
+                        >
+                          Import To Chat
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {pinnedMessages.length > 0 && (
                 <div className="border-b border-zinc-800 p-3 bg-zinc-950/50">
                   <p className="text-[11px] uppercase tracking-wider text-zinc-500 mb-2">Pinned</p>
@@ -426,7 +709,7 @@ export default function ChatPage() {
 
               <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-transparent">
                 {groupMessages.map((message) => {
-                  const mine = message.senderId === CURRENT_USER
+                  const mine = message.senderId === currentUserId
                   const sender = getSender(users, message.senderId)
                   const decrypted = decryptedById[message.id]
                   const replyTo = message.replyToMessageId ? groupMessages.find((m) => m.id === message.replyToMessageId) : null
@@ -506,7 +789,7 @@ export default function ChatPage() {
                       <div className="mt-2 flex flex-wrap items-center gap-1.5">
                         {EMOJIS.map((emoji) => {
                           const count = message.reactions[emoji]?.length ?? 0
-                          const mineReacted = message.reactions[emoji]?.includes(CURRENT_USER)
+                          const mineReacted = message.reactions[emoji]?.includes(currentUserId)
                           return (
                             <button
                               key={emoji}
@@ -580,7 +863,7 @@ export default function ChatPage() {
                       type="file"
                       className="hidden"
                       onChange={onPickMedia}
-                      accept="image/*,video/*,.pdf,.txt,.doc,.docx,.csv,.json"
+                      accept="*/*"
                       aria-label="Attach media"
                       title="Attach media"
                     />
@@ -597,6 +880,7 @@ export default function ChatPage() {
                 </div>
               </form>
             </motion.section>
+
           </div>
         )}
       </div>

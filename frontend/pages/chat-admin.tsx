@@ -1,4 +1,4 @@
-import React, { FormEvent, useEffect, useMemo, useState } from "react"
+import React, { FormEvent, useEffect, useMemo, useRef, useState } from "react"
 import DashboardLayout from "@/components/layout/DashboardLayout"
 import { motion } from "framer-motion"
 import { ShieldCheck, Users, Plus, FileText, GitBranch, Save } from "lucide-react"
@@ -11,19 +11,30 @@ import {
   loadSecureChatState,
   saveSecureChatState,
   verifyAndDecryptMessage,
+  getSecureChatSerializedState,
+  loadSecureChatStateFromSerialized,
+  storeSecureChatSerializedState,
 } from "@/lib/secureChatStore"
 import { cn } from "@/lib/utils"
 import { getMockAnalysisList, getMockChains, getMockFindings, getMockSummary } from "@/lib/mockData"
-
-const CURRENT_USER = getCurrentUserId()
+import { getAuthSession } from "@/lib/authSession"
+import { useRouter } from "next/router"
+import { createChatSyncClient } from "@/lib/chatSync"
 
 export default function ChatAdminPage() {
+  const currentUserId = getCurrentUserId()
+  const router = useRouter()
+  const syncRef = useRef<ReturnType<typeof createChatSyncClient> | null>(null)
+  const skipNextSaveRef = useRef(false)
+  const skipNextPublishRef = useRef(false)
+  const [isStateLoaded, setIsStateLoaded] = useState(false)
+  const latestSnapshotRef = useRef({ users: [] as ChatUser[], groups: [] as ChatGroup[], messages: [] as ChatMessage[], selectedGroupId: "" })
   const [users, setUsers] = useState<ChatUser[]>([])
   const [groups, setGroups] = useState<ChatGroup[]>([])
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [selectedGroupId, setSelectedGroupId] = useState("")
   const [newGroupName, setNewGroupName] = useState("")
-  const [newGroupMembers, setNewGroupMembers] = useState<string[]>([CURRENT_USER])
+  const [newGroupMembers, setNewGroupMembers] = useState<string[]>([currentUserId])
   const [memberToAdd, setMemberToAdd] = useState("")
   const [classification, setClassification] = useState<"internal" | "confidential" | "restricted">("confidential")
   const [tagsInput, setTagsInput] = useState("")
@@ -36,6 +47,35 @@ export default function ChatAdminPage() {
   const [reportFindingId, setReportFindingId] = useState("")
   const [reportDetails, setReportDetails] = useState("")
 
+  const refreshGroupMessages = async (groupId: string) => {
+    if (!groupId) return
+    try {
+      const res = await fetch(`/api/chat/messages?groupId=${encodeURIComponent(groupId)}`)
+      if (!res.ok) {
+        console.error(`Failed to refresh messages: ${res.status} ${res.statusText}`)
+        return
+      }
+      const data = await res.json()
+      if (!Array.isArray(data.messages)) {
+        console.warn("Invalid messages response format")
+        return
+      }
+
+      setMessages((prev) => {
+        const merged = new Map<string, typeof prev[number]>()
+        for (const message of prev) merged.set(message.id, message)
+        for (const message of data.messages) merged.set(message.id, message)
+        const sorted = Array.from(merged.values()).sort((a, b) => a.sentAt - b.sentAt)
+        if (sorted.length !== prev.length) {
+          console.log(`Refreshed group ${groupId}: merged ${data.messages.length} new message(s)`)
+        }
+        return sorted
+      })
+    } catch (error) {
+      console.error(`Message refresh failed: ${error instanceof Error ? error.message : String(error)}`)
+    }
+  }
+
   const analyses = useMemo(() => getMockAnalysisList(), [])
   const chains = useMemo(() => (scanId ? getMockChains(scanId) : []), [scanId])
   const findings = useMemo(() => (scanId ? getMockFindings(scanId) : []), [scanId])
@@ -47,25 +87,165 @@ export default function ChatAdminPage() {
     [messages, selectedGroupId]
   )
 
+  const activeUsers = useMemo(
+    () => users.filter((u) => u.id === "u-admin" || u.id === "u-user"),
+    [users]
+  )
+
   useEffect(() => {
+    const session = getAuthSession()
+    if (!session) {
+      router.push("/auth")
+      return
+    }
+    if (session.role !== "admin") {
+      router.push("/chat")
+      return
+    }
+
+    setStatus(`Logged in as ${session.name} (${session.role}) | User ID: ${currentUserId}`)
+
     let mounted = true
-    loadSecureChatState()
-      .then((state) => {
+
+    const hydrateChat = async () => {
+      try {
+        const res = await fetch("/api/chat/state")
+        if (res.ok) {
+          const data = await res.json()
+          if (Array.isArray(data.users) && Array.isArray(data.groups) && Array.isArray(data.messages) && data.groups.length) {
+            if (!mounted) return
+            setUsers(data.users)
+            setGroups(data.groups)
+            setMessages(data.messages)
+            const groupId = data.selectedGroupId || data.groups[0]?.id || ""
+            setSelectedGroupId(groupId)
+            setIsStateLoaded(true)
+            if (groupId) {
+              await refreshGroupMessages(groupId)
+            }
+            setStatus("Loaded admin chat state from Supabase backend.")
+            return
+          }
+        }
+      } catch (error) {
+        console.error(`Backend hydration failed: ${error instanceof Error ? error.message : String(error)}`)
+        // fall back to local state below
+      }
+
+      try {
+        const state = await loadSecureChatState()
         if (!mounted) return
         setUsers(state.users)
         setGroups(state.groups)
         setMessages(state.messages)
-        setSelectedGroupId(state.selectedGroupId)
-      })
-      .catch(() => setStatus("Failed to load chat admin state."))
+        setSelectedGroupId(state.selectedGroupId || state.groups[0]?.id || "")
+        setIsStateLoaded(true)
+        setStatus("Loaded local admin chat state.")
+      } catch (error) {
+        if (!mounted) return
+        const msg = error instanceof Error ? error.message : "Failed to load chat admin state"
+        setStatus(msg)
+        console.error(`Hydration error: ${msg}`)
+      }
+    }
+
+    void hydrateChat()
 
     return () => {
       mounted = false
+    }
+  }, [router, currentUserId])
+
+  useEffect(() => {
+    if (!isStateLoaded) return
+
+    const sync = createChatSyncClient({
+      getSnapshot: () => {
+        const state = JSON.stringify(latestSnapshotRef.current)
+        storeSecureChatSerializedState(state)
+        return state
+      },
+      onMessage: (message) => {
+        skipNextPublishRef.current = true
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === message.id)) return prev
+          return [...prev, message]
+        })
+        void refreshGroupMessages(message.groupId)
+        setStatus(`✓ Message received from peer | User: ${currentUserId}`)
+      },
+      onSnapshot: (serializedState) => {
+        skipNextSaveRef.current = true
+        skipNextPublishRef.current = true
+        storeSecureChatSerializedState(serializedState)
+        loadSecureChatStateFromSerialized(serializedState)
+          .then((state) => {
+            setUsers(state.users)
+            setGroups(state.groups)
+            setMessages(state.messages)
+            setSelectedGroupId(state.selectedGroupId)
+            setStatus(`✓ Admin synced | User: ${currentUserId} | Messages: ${state.messages.length}`)
+          })
+          .catch(() => setStatus("Received invalid sync payload."))
+      },
+      onStatus: (statusMessage) => {
+        if (statusMessage.includes("Connected")) {
+          setStatus(`✓ Relay connected | User: ${currentUserId}`)
+        } else if (statusMessage.includes("Disconnected")) {
+          setStatus(`⚠ Relay disconnected | User: ${currentUserId} | Will attempt reconnect...`)
+        } else {
+          setStatus(statusMessage)
+        }
+      },
+    })
+
+    syncRef.current = sync
+    sync.connect()
+    return () => {
+      sync.disconnect()
+      syncRef.current = null
+    }
+  }, [isStateLoaded, currentUserId])
+
+  useEffect(() => {
+    latestSnapshotRef.current = { users, groups, messages, selectedGroupId }
+  }, [users, groups, messages, selectedGroupId])
+
+  useEffect(() => {
+    let active = true
+
+    const timer = window.setInterval(() => {
+      const serialized = getSecureChatSerializedState()
+      if (!serialized) return
+      loadSecureChatStateFromSerialized(serialized)
+        .then((state) => {
+          if (!active) return
+          setUsers(state.users)
+          setGroups(state.groups)
+          setMessages(state.messages)
+          setSelectedGroupId((prev) => prev || state.selectedGroupId)
+          console.log(`[Admin synced] ${state.messages.length} messages, ${state.groups.length} groups`)
+        })
+        .catch((error) => {
+          if (!active) return
+          console.warn(`Periodic sync parse error: ${error instanceof Error ? error.message : String(error)}`)
+        })
+    }, 1500)
+
+    return () => {
+      active = false
+      window.clearInterval(timer)
     }
   }, [])
 
   useEffect(() => {
     if (!users.length || !groups.length) return
+
+    if (skipNextSaveRef.current) {
+      skipNextSaveRef.current = false
+      return
+    }
+
     saveSecureChatState({
       users,
       groups,
@@ -73,6 +253,49 @@ export default function ChatAdminPage() {
       selectedGroupId,
     })
   }, [users, groups, messages, selectedGroupId])
+
+  useEffect(() => {
+    if (!users.length || !groups.length) return
+
+    if (skipNextPublishRef.current) {
+      skipNextPublishRef.current = false
+      return
+    }
+
+    const state = {
+      users,
+      groups,
+      messages,
+      selectedGroupId,
+    }
+
+    const serialized = JSON.stringify(state)
+    syncRef.current?.publishSnapshot(serialized)
+    console.log(`[${currentUserId}] publishing snapshot: ${messages.length} messages, group ${selectedGroupId}`)
+  }, [users, groups, messages, selectedGroupId, currentUserId])
+
+  useEffect(() => {
+    if (!isStateLoaded) return
+
+    const state = {
+      users,
+      groups,
+      messages,
+      selectedGroupId,
+    }
+
+    void fetch("/api/chat/state", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(state),
+    }).then(res => {
+      if (!res.ok) {
+        console.error(`Failed to persist state: ${res.status}`)
+      }
+    }).catch((error) => {
+      console.error(`State persistence error: ${error instanceof Error ? error.message : String(error)}`)
+    })
+  }, [isStateLoaded, users, groups, messages, selectedGroupId])
 
   useEffect(() => {
     let active = true
@@ -111,22 +334,31 @@ export default function ChatAdminPage() {
   const handleCreateGroup = async (e: FormEvent) => {
     e.preventDefault()
     const name = newGroupName.trim()
-    if (!name || newGroupMembers.length < 2) {
-      setStatus("Group needs name and at least 2 members.")
+    if (!name || newGroupMembers.length < 1) {
+      setStatus("Group needs a name and at least 1 member.")
       return
     }
 
-    const group = await createGroup({
-      name,
-      members: newGroupMembers,
-      ownerUserId: CURRENT_USER,
-    })
+    try {
+      console.log(`[Admin] Creating group "${name}" with members: ${newGroupMembers.join(", ")}`)
+      const group = await createGroup({
+        name,
+        members: Array.from(new Set(newGroupMembers)),
+        ownerUserId: currentUserId,
+      })
+      console.log(`[Admin] Group created: ${group.id}`)
 
-    setGroups((prev) => [group, ...prev])
-    setSelectedGroupId(group.id)
-    setNewGroupName("")
-    setNewGroupMembers([CURRENT_USER])
-    setStatus(`Group ${name} created.`)
+      setGroups((prev) => [group, ...prev])
+      setSelectedGroupId(group.id)
+      void refreshGroupMessages(group.id)
+      setNewGroupName("")
+      setNewGroupMembers([currentUserId])
+      setStatus(`✓ Group "${name}" created successfully.`)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Group creation failed"
+      console.error(`[Admin] Group creation error: ${message}`)
+      setStatus(`✗ Group creation failed: ${message}`)
+    }
   }
 
   const addMember = () => {
@@ -272,14 +504,14 @@ export default function ChatAdminPage() {
                 className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-zinc-500"
               />
               <div className="grid grid-cols-2 gap-1.5">
-                {users.map((u) => {
+                {activeUsers.map((u) => {
                   const selected = newGroupMembers.includes(u.id)
                   return (
                     <button
                       key={u.id}
                       type="button"
                       onClick={() => {
-                        if (u.id === CURRENT_USER) return
+                        if (u.id === currentUserId) return
                         setNewGroupMembers((prev) =>
                           selected ? prev.filter((id) => id !== u.id) : [...prev, u.id]
                         )
@@ -366,7 +598,7 @@ export default function ChatAdminPage() {
                       className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white"
                     >
                       <option value="">Select member</option>
-                      {users
+                      {activeUsers
                         .filter((u) => !selectedGroup.members.includes(u.id))
                         .map((u) => (
                           <option key={u.id} value={u.id}>
@@ -466,6 +698,7 @@ export default function ChatAdminPage() {
                     {groupMessages.length === 0 && <p className="text-sm text-zinc-500">No messages in this conversation.</p>}
                   </div>
                 </div>
+
               </>
             )}
           </motion.section>

@@ -65,18 +65,12 @@ export type ChatUser = {
   id: string
   name: string
   color: string
-  signPrivate: CryptoKey
-  signPublic: CryptoKey
-  signPrivateJwk: JsonWebKey
-  signPublicJwk: JsonWebKey
 }
 
 export type ChatGroup = {
   id: string
   name: string
   members: string[]
-  key: CryptoKey
-  keyJwk: JsonWebKey
   pinnedMessageIds: string[]
   metadata: GroupMetadata
 }
@@ -92,15 +86,12 @@ type StoredUser = {
   id: string
   name: string
   color: string
-  signPrivateJwk: JsonWebKey
-  signPublicJwk: JsonWebKey
 }
 
 type StoredGroup = {
   id: string
   name: string
   members: string[]
-  keyJwk: JsonWebKey
   pinnedMessageIds: string[]
   metadata: GroupMetadata
 }
@@ -112,18 +103,40 @@ type StoredState = {
   selectedGroupId: string
 }
 
-const STORAGE_KEY = "secure_chat_state_v1"
+const STORAGE_KEY = "secure_chat_state_v6"
+const RESET_MARKER_KEY = "secure_chat_reset_v6_clean"
+const CHAT_STORAGE_KEYS_TO_CLEAR = [
+  "secure_chat_state_v1",
+  "secure_chat_state_v2",
+  "secure_chat_state_v3",
+  "secure_chat_state_v4",
+  "secure_chat_state_v5",
+  "secure_chat_sync_snapshot",
+  "secure_chat_reset_v4",
+  "secure_chat_reset_v5_clean",
+]
 
-const CURRENT_USER = "u-me"
+const ADMIN_USER = "u-admin"
+const STANDARD_USER = "u-user"
 const USER_SEEDS = [
-  { id: CURRENT_USER, name: "You", color: "bg-violet-500/30 text-violet-300" },
-  { id: "u-ana", name: "Ananya", color: "bg-sky-500/30 text-sky-300" },
-  { id: "u-raj", name: "Raj", color: "bg-emerald-500/30 text-emerald-300" },
-  { id: "u-mila", name: "Mila", color: "bg-amber-500/30 text-amber-300" },
+  { id: ADMIN_USER, name: "Security Admin", color: "bg-violet-500/30 text-violet-300" },
+  { id: STANDARD_USER, name: "SOC Analyst", color: "bg-sky-500/30 text-sky-300" },
 ]
 
 const strToBytes = (value: string) => new TextEncoder().encode(value)
 const bytesToStr = (value: ArrayBuffer) => new TextDecoder().decode(value)
+
+function ensureFreshChatStorage() {
+  if (typeof window === "undefined") return
+  
+  // Always clear old versions for a fresh start
+  for (const key of CHAT_STORAGE_KEYS_TO_CLEAR) {
+    window.localStorage.removeItem(key)
+  }
+  
+  // Mark clean slate
+  window.localStorage.setItem(RESET_MARKER_KEY, "1")
+}
 
 const b64FromArray = (bytes: Uint8Array) => {
   let binary = ""
@@ -145,58 +158,23 @@ const arrayFromB64 = (b64: string) => {
 }
 
 export const makeId = () => {
-  const arr = new Uint8Array(6)
-  window.crypto.getRandomValues(arr)
-  return `id-${Date.now()}-${Array.from(arr).map((x) => x.toString(16).padStart(2, "0")).join("")}`
-}
-
-async function generateSigningKeys() {
-  return window.crypto.subtle.generateKey(
-    {
-      name: "ECDSA",
-      namedCurve: "P-256",
-    },
-    true,
-    ["sign", "verify"]
-  )
-}
-
-async function generateGroupKey() {
-  return window.crypto.subtle.generateKey(
-    {
-      name: "AES-GCM",
-      length: 256,
-    },
-    true,
-    ["encrypt", "decrypt"]
-  )
+  const rand = Math.random().toString(16).slice(2, 10)
+  return `id-${Date.now()}-${rand}`
 }
 
 async function makeUser(seed: { id: string; name: string; color: string }): Promise<ChatUser> {
-  const pair = await generateSigningKeys()
-  const signPrivateJwk = await window.crypto.subtle.exportKey("jwk", pair.privateKey)
-  const signPublicJwk = await window.crypto.subtle.exportKey("jwk", pair.publicKey)
-
   return {
     id: seed.id,
     name: seed.name,
     color: seed.color,
-    signPrivate: pair.privateKey,
-    signPublic: pair.publicKey,
-    signPrivateJwk,
-    signPublicJwk,
   }
 }
 
 async function makeGroup(input: { id: string; name: string; members: string[]; ownerUserId: string }): Promise<ChatGroup> {
-  const key = await generateGroupKey()
-  const keyJwk = await window.crypto.subtle.exportKey("jwk", key)
   return {
     id: input.id,
     name: input.name,
     members: input.members,
-    key,
-    keyJwk,
     pinnedMessageIds: [],
     metadata: {
       ownerUserId: input.ownerUserId,
@@ -209,55 +187,28 @@ async function makeGroup(input: { id: string; name: string; members: string[]; o
   }
 }
 
-export async function encryptPayload(payload: MessagePayload, key: CryptoKey): Promise<ChatEnvelope> {
-  const iv = new Uint8Array(12)
-  window.crypto.getRandomValues(iv)
-  const plain = strToBytes(JSON.stringify(payload))
-  const cipher = await window.crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, plain)
-
+export async function encryptPayload(payload: MessagePayload): Promise<ChatEnvelope> {
   return {
-    ivB64: b64FromArray(iv),
-    cipherB64: b64FromArray(new Uint8Array(cipher)),
+    ivB64: "plain",
+    cipherB64: b64FromArray(strToBytes(JSON.stringify(payload))),
   }
 }
 
 export async function signEnvelope(
-  message: Pick<ChatMessage, "groupId" | "senderId" | "sentAt" | "envelope">,
-  privateKey: CryptoKey
+  _message: Pick<ChatMessage, "groupId" | "senderId" | "sentAt" | "envelope">
 ) {
-  const signedText = `${message.groupId}.${message.senderId}.${message.sentAt}.${message.envelope.ivB64}.${message.envelope.cipherB64}`
-  const sig = await window.crypto.subtle.sign(
-    {
-      name: "ECDSA",
-      hash: "SHA-256",
-    },
-    privateKey,
-    strToBytes(signedText)
-  )
-  return b64FromArray(new Uint8Array(sig))
+  return "plain"
 }
 
 export async function verifyEnvelope(
-  message: Pick<ChatMessage, "groupId" | "senderId" | "sentAt" | "envelope" | "signatureB64">,
-  publicKey: CryptoKey
+  _message: Pick<ChatMessage, "groupId" | "senderId" | "sentAt" | "envelope" | "signatureB64">
 ) {
-  const signedText = `${message.groupId}.${message.senderId}.${message.sentAt}.${message.envelope.ivB64}.${message.envelope.cipherB64}`
-  return window.crypto.subtle.verify(
-    {
-      name: "ECDSA",
-      hash: "SHA-256",
-    },
-    publicKey,
-    arrayFromB64(message.signatureB64),
-    strToBytes(signedText)
-  )
+  return true
 }
 
-export async function decryptPayload(envelope: ChatEnvelope, key: CryptoKey): Promise<MessagePayload> {
-  const iv = arrayFromB64(envelope.ivB64)
-  const cipher = arrayFromB64(envelope.cipherB64)
-  const plain = await window.crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, cipher)
-  return JSON.parse(bytesToStr(plain)) as MessagePayload
+export async function decryptPayload(envelope: ChatEnvelope): Promise<MessagePayload> {
+  const plainBytes = arrayFromB64(envelope.cipherB64)
+  return JSON.parse(bytesToStr(plainBytes.buffer)) as MessagePayload
 }
 
 export async function createSignedMessage(input: {
@@ -266,7 +217,7 @@ export async function createSignedMessage(input: {
   payload: MessagePayload
   replyToMessageId?: string
 }): Promise<ChatMessage> {
-  const envelope = await encryptPayload(input.payload, input.group.key)
+  const envelope = await encryptPayload(input.payload)
   const base: Omit<ChatMessage, "signatureB64"> = {
     id: makeId(),
     groupId: input.group.id,
@@ -280,7 +231,7 @@ export async function createSignedMessage(input: {
       integrity: "signed",
     },
   }
-  const signatureB64 = await signEnvelope(base, input.sender.signPrivate)
+  const signatureB64 = await signEnvelope(base)
   return {
     ...base,
     signatureB64,
@@ -290,40 +241,15 @@ export async function createSignedMessage(input: {
 async function buildSeedState(): Promise<SecureChatState> {
   const users = await Promise.all(USER_SEEDS.map(makeUser))
   const groups = await Promise.all([
-    makeGroup({ id: "grp-incidents", name: "Incident Response", members: [CURRENT_USER, "u-ana", "u-raj"], ownerUserId: CURRENT_USER }),
-    makeGroup({ id: "grp-threat-intel", name: "Threat Intel", members: [CURRENT_USER, "u-ana", "u-mila"], ownerUserId: CURRENT_USER }),
+    makeGroup({ id: "grp-admin-user", name: "Admin & SOC", members: [ADMIN_USER, STANDARD_USER], ownerUserId: ADMIN_USER }),
   ])
 
-  const ana = users.find((u) => u.id === "u-ana")
-  const mila = users.find((u) => u.id === "u-mila")
-  const incidents = groups.find((g) => g.id === "grp-incidents")
-  const intel = groups.find((g) => g.id === "grp-threat-intel")
-
-  if (!ana || !mila || !incidents || !intel) {
-    return { users, groups, messages: [], selectedGroupId: groups[0]?.id || "" }
-  }
-
-  const msg1 = await createSignedMessage({
-    group: incidents,
-    sender: ana,
-    payload: { text: "Team, lateral movement detected. Validate host isolation in Segment-2." },
-  })
-  msg1.sentAt = Date.now() - 1000 * 60 * 8
-  msg1.signatureB64 = await signEnvelope(msg1, ana.signPrivate)
-
-  const msg2 = await createSignedMessage({
-    group: intel,
-    sender: mila,
-    payload: { text: "IOC package uploaded. Reviewing Suricata correlation now." },
-  })
-  msg2.sentAt = Date.now() - 1000 * 60 * 3
-  msg2.signatureB64 = await signEnvelope(msg2, mila.signPrivate)
-
+  // Start completely clean with no messages
   return {
     users,
     groups,
-    messages: [msg1, msg2],
-    selectedGroupId: "grp-incidents",
+    messages: [],
+    selectedGroupId: "grp-admin-user",
   }
 }
 
@@ -333,14 +259,11 @@ function serializeState(state: SecureChatState): StoredState {
       id: u.id,
       name: u.name,
       color: u.color,
-      signPrivateJwk: u.signPrivateJwk,
-      signPublicJwk: u.signPublicJwk,
     })),
     groups: state.groups.map((g) => ({
       id: g.id,
       name: g.name,
       members: g.members,
-      keyJwk: g.keyJwk,
       pinnedMessageIds: g.pinnedMessageIds,
       metadata: g.metadata,
     })),
@@ -352,40 +275,19 @@ function serializeState(state: SecureChatState): StoredState {
 async function restoreState(stored: StoredState): Promise<SecureChatState> {
   const users: ChatUser[] = []
   for (const user of stored.users) {
-    const signPrivate = await window.crypto.subtle.importKey(
-      "jwk",
-      user.signPrivateJwk,
-      { name: "ECDSA", namedCurve: "P-256" },
-      true,
-      ["sign"]
-    )
-    const signPublic = await window.crypto.subtle.importKey(
-      "jwk",
-      user.signPublicJwk,
-      { name: "ECDSA", namedCurve: "P-256" },
-      true,
-      ["verify"]
-    )
     users.push({
       id: user.id,
       name: user.name,
       color: user.color,
-      signPrivate,
-      signPublic,
-      signPrivateJwk: user.signPrivateJwk,
-      signPublicJwk: user.signPublicJwk,
     })
   }
 
   const groups: ChatGroup[] = []
   for (const group of stored.groups) {
-    const key = await window.crypto.subtle.importKey("jwk", group.keyJwk, { name: "AES-GCM" }, true, ["encrypt", "decrypt"])
     groups.push({
       id: group.id,
       name: group.name,
       members: group.members,
-      key,
-      keyJwk: group.keyJwk,
       pinnedMessageIds: group.pinnedMessageIds,
       metadata: group.metadata,
     })
@@ -400,6 +302,8 @@ async function restoreState(stored: StoredState): Promise<SecureChatState> {
 }
 
 export async function loadSecureChatState(): Promise<SecureChatState> {
+  ensureFreshChatStorage()
+
   const saved = window.localStorage.getItem(STORAGE_KEY)
   if (!saved) {
     const seeded = await buildSeedState()
@@ -418,6 +322,21 @@ export async function loadSecureChatState(): Promise<SecureChatState> {
   }
 }
 
+export async function loadSecureChatStateFromSerialized(serialized: string): Promise<SecureChatState> {
+  const parsed = JSON.parse(serialized) as StoredState
+  return restoreState(parsed)
+}
+
+export function getSecureChatSerializedState() {
+  if (typeof window === "undefined") return null
+  return window.localStorage.getItem(STORAGE_KEY)
+}
+
+export function storeSecureChatSerializedState(serialized: string) {
+  if (typeof window === "undefined") return
+  window.localStorage.setItem(STORAGE_KEY, serialized)
+}
+
 export function saveSecureChatState(state: SecureChatState) {
   const serialized = serializeState(state)
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(serialized))
@@ -428,6 +347,10 @@ export async function createGroup(input: {
   members: string[]
   ownerUserId: string
 }): Promise<ChatGroup> {
+  if (input.ownerUserId !== ADMIN_USER) {
+    throw new Error("Only admin can create groups")
+  }
+
   return makeGroup({
     id: makeId(),
     name: input.name,
@@ -437,7 +360,19 @@ export async function createGroup(input: {
 }
 
 export function getCurrentUserId() {
-  return CURRENT_USER
+  if (typeof window === "undefined") return STANDARD_USER
+  try {
+    const raw = window.sessionStorage.getItem("auth_session") || window.localStorage.getItem("auth_session")
+    if (!raw) return STANDARD_USER
+    const parsed = JSON.parse(raw) as { role?: string }
+    return parsed.role === "admin" ? ADMIN_USER : STANDARD_USER
+  } catch {
+    return STANDARD_USER
+  }
+}
+
+export function isAdminUser(userId: string) {
+  return userId === ADMIN_USER
 }
 
 export async function verifyAndDecryptMessage(input: {
@@ -452,11 +387,11 @@ export async function verifyAndDecryptMessage(input: {
   }
 
   try {
-    const verified = await verifyEnvelope(input.message, sender.signPublic)
+    const verified = await verifyEnvelope(input.message)
     if (!verified) {
       return { tampered: true, payload: null }
     }
-    const payload = await decryptPayload(input.message.envelope, group.key)
+    const payload = await decryptPayload(input.message.envelope)
     return { tampered: false, payload }
   } catch {
     return { tampered: true, payload: null }

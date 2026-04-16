@@ -17,6 +17,7 @@
 export const USER_CSV_TO_SCAN_ID: Record<string, string> = {
   "user001logs.csv": "user-001",
   "user002logs.csv": "user-002",
+  "user003logs.csv": "user-003",
 }
 
 // Detection type labels shown in the pie chart
@@ -1145,12 +1146,298 @@ Immediate containment and forensic investigation is required.
   return { analysis, events: [], findings, chains, summary }
 }
 
+// ─── USER003 LOGS JSON DATASET ────────────────────────────────────────────────
+// Derived from /datasets/dataset3/user003logs.json
+// Campaign: Multi-Vector APT — 6 attack chains, 97% CRITICAL
+
+function buildUser003Dataset() {
+  // ---------- Analysis ----------
+  const analysis: MockAnalysis = {
+    scan_id: "user-003",
+    file_name: "user003logs.csv",
+    total_logs: 10000,
+    total_threats: 120,
+    attack_chain_count: 6,
+    risk_score: 9700,
+    threat_density: 1.2,
+    generated_at: "2026-04-13T10:00:00Z",
+    status: "completed",
+  }
+
+  // ---------- Findings (derived from user003logs.json attacked_logs) ----------
+  const findings: MockFinding[] = [
+    // Chain 1 — Lateral Movement via SMB + LSASS Dump
+    { id: "fnd-u003-01", severity: "critical", title: "PowerShell Encoded IEX Download — Lateral Movement Entry", detection_type: "rule", rule_id: "SOC-T1059-001-003", mitre_techniques: ["PowerShell Encoded Command Execution"], mitre_ids: ["T1059.001"], affected_users: ["WIN-SOC\\Dev-01", "WIN-SOC\\User1", "WIN-SOC\\Admin", "NT AUTHORITY\\SYSTEM"], affected_hosts: ["WIN-SOC-PROD-01", "WIN-SOC-PROD-02"], count: 20, description: "Five encoded PowerShell IEX Download Cradle executions detected across PROD-01 and PROD-02 within 4 seconds — consistent with an automated stage-1 dropper delivering a lateral movement payload via SMB Admin shares.", timestamp: "2026-03-26 23:56:48" },
+    { id: "fnd-u003-02", severity: "critical", title: "LSASS Memory Dump via Mimikatz (2 hosts)", detection_type: "ml_anomaly", rule_id: "SOC-T1003-001-003", mitre_techniques: ["OS Credential Dumping: LSASS Memory"], mitre_ids: ["T1003.001"], affected_users: ["NT AUTHORITY\\SYSTEM"], affected_hosts: ["WIN-SOC-PROD-01", "WIN-SOC-PROD-02"], count: 20, description: "ML model detected mimikatz.exe accessing LSASS memory on both PROD-01 and PROD-02, extracting NTLM hashes. Network I/O spike to 90 MB/s — 9.3-sigma deviation. Dump confirms full credential harvesting.", timestamp: "2026-03-26 23:57:38" },
+    // Chain 2 — Spearphishing → Macro Execution → Persistence
+    { id: "fnd-u003-03", severity: "high", title: "Spearphishing Attachment — Macro Execution on WIN-SOC-PROD-03", detection_type: "yara_match", rule_id: "SOC-T1566-001-003", mitre_techniques: ["Phishing: Spearphishing Attachment", "User Execution: Malicious File"], mitre_ids: ["T1566.001", "T1204.002"], affected_users: ["WIN-SOC\\Analyst1"], affected_hosts: ["WIN-SOC-PROD-03"], count: 15, description: "YARA rule MACRO_DROPPER_v3 matched. Analyst1 opened a malicious email attachment triggering a VBA macro in winword.exe that spawned cmd.exe — classic Office macro shellcode dropper pattern.", timestamp: "2026-03-27 01:10:05" },
+    { id: "fnd-u003-04", severity: "critical", title: "Malicious Scheduled Task + Service Installed for Persistence", detection_type: "behavioral", rule_id: "SOC-T1053-T1543-003", mitre_techniques: ["Scheduled Task/Job", "Create or Modify System Process: Windows Service"], mitre_ids: ["T1053.005", "T1543.003"], affected_users: ["WIN-SOC\\Analyst1", "NT AUTHORITY\\SYSTEM"], affected_hosts: ["WIN-SOC-PROD-03"], count: 10, description: "Behavioral engine flagged dual persistence: schtasks.exe created a malicious scheduled task, then services.exe installed an unsigned malicious service — ensuring cross-reboot persistence on PROD-03.", timestamp: "2026-03-27 01:10:45" },
+    // Chain 3 — DLL Injection + Privilege Escalation + Defense Evasion
+    { id: "fnd-u003-05", severity: "critical", title: "DLL Injection into svchost.exe — Privilege Escalation", detection_type: "rule", rule_id: "SOC-T1055-001-003", mitre_techniques: ["Process Injection: Dynamic-link Library Injection"], mitre_ids: ["T1055.001"], affected_users: ["WIN-SOC\\SvcAcct"], affected_hosts: ["WIN-SOC-PROD-04"], count: 10, description: "rundll32.exe injected an unsigned DLL into svchost.exe (Sysmon Event 8: CreateRemoteThread) followed by SeDebugPrivilege abuse — escalating from SvcAcct to SYSTEM on PROD-04.", timestamp: "2026-03-27 02:05:00" },
+    { id: "fnd-u003-06", severity: "critical", title: "Windows Event Log Clearing — Audit Trail Destruction", detection_type: "behavioral", rule_id: "SOC-T1070-001-003", mitre_techniques: ["Indicator Removal: Clear Windows Event Logs"], mitre_ids: ["T1070.001"], affected_users: ["NT AUTHORITY\\SYSTEM"], affected_hosts: ["WIN-SOC-PROD-04"], count: 10, description: "wevtutil.exe used to clear all Windows Event Logs (event 4688) followed by the audit log deletion (event 1102) — destroying forensic evidence post-privilege-escalation. SYSTEM-level execution confirms full compromise.", timestamp: "2026-03-27 02:07:10" },
+    // Chain 4 — Credential Harvesting via ProcDump + Pass-the-Hash
+    { id: "fnd-u003-07", severity: "critical", title: "LSASS Dump via ProcDump + NTLM Hash Extraction", detection_type: "ml_anomaly", rule_id: "SOC-T1003-001-004", mitre_techniques: ["OS Credential Dumping: LSASS Memory"], mitre_ids: ["T1003.001"], affected_users: ["WIN-SOC\\BackupOp", "NT AUTHORITY\\SYSTEM"], affected_hosts: ["WIN-SOC-PROD-05"], count: 15, description: "ML model flagged procdump.exe accessing LSASS virtual memory — 9.7-sigma anomaly. CPU spike to 72%, Network I/O 95 MB/s. NTLM hash extracted (event 4776), followed by SAM registry hive dump via reg.exe.", timestamp: "2026-03-27 03:15:00" },
+    { id: "fnd-u003-08", severity: "critical", title: "Pass-the-Hash — Kerberos TGT Request from WIN-SOC-DC-01", detection_type: "behavioral", rule_id: "SOC-T1550-002-003", mitre_techniques: ["Use Alternate Authentication Material: Pass the Hash"], mitre_ids: ["T1550.002"], affected_users: ["WIN-SOC\\BackupOp"], affected_hosts: ["WIN-SOC-DC-01"], count: 5, description: "Behavioral analysis detected Kerberos TGT request (event 4768) from BackupOp using a harvested NTLM hash — Pass-the-Hash lateral movement to the domain controller confirmed.", timestamp: "2026-03-27 03:16:45" },
+    // Chain 5 — C2 Beaconing + Tool Download
+    { id: "fnd-u003-09", severity: "critical", title: "HTTPS C2 Beacon + DNS Tunneling to 185.220.101.42", detection_type: "rule", rule_id: "SOC-T1071-001-003", mitre_techniques: ["Application Layer Protocol: Web Protocols", "Application Layer Protocol: DNS"], mitre_ids: ["T1071.001", "T1071.004"], affected_users: ["WIN-SOC\\DBAdmin", "NT AUTHORITY\\SYSTEM"], affected_hosts: ["WIN-SOC-PROD-06"], count: 15, description: "DBAdmin's powershell.exe established repeated HTTPS beaconing to 185.220.101.42:443 (bulletproof ASN). DNS tunneling C2 also detected (Sysmon event 3). certutil.exe then downloaded a secondary payload — keylogger dropped.", timestamp: "2026-03-27 04:00:10" },
+    // Chain 6 — Data Staging + FTP + HTTPS Exfiltration
+    { id: "fnd-u003-10", severity: "critical", title: "Data Staging via robocopy + 7-Zip Password Archive", detection_type: "ml_anomaly", rule_id: "SOC-T1074-001-003", mitre_techniques: ["Data Staged: Local Data Staging", "Archive Collected Data: Archive via Utility"], mitre_ids: ["T1074.001", "T1560.001"], affected_users: ["WIN-SOC\\DBAdmin"], affected_hosts: ["WIN-SOC-PROD-06"], count: 10, description: "ML model flagged 120 MB/s robocopy bulk file copy to a staging directory (8.1-sigma I/O anomaly), followed by 7z.exe creating a password-protected archive. CPU 60%, Mem 850 MB — clear pre-exfiltration staging pattern.", timestamp: "2026-03-27 05:30:00" },
+    { id: "fnd-u003-11", severity: "critical", title: "Dual-Channel Exfiltration — FTP + HTTPS POST to 91.108.4.10", detection_type: "rule", rule_id: "SOC-T1041-003", mitre_techniques: ["Exfiltration Over C2 Channel"], mitre_ids: ["T1041"], affected_users: ["WIN-SOC\\DBAdmin", "NT AUTHORITY\\SYSTEM"], affected_hosts: ["WIN-SOC-PROD-06", "WIN-SOC-DC-01"], count: 15, description: "Data exfiltrated over dual channels: ftp.exe (event 5156, 200 MB/s) and powershell.exe HTTPS POST (190 MB/s) to 91.108.4.10. DBAdmin then accessed SYSVOL share on DC-01 for additional credential/GPO file exfiltration.", timestamp: "2026-03-27 05:31:30" },
+    // Additional HIGH/MEDIUM findings
+    { id: "fnd-u003-12", severity: "high", title: "SAM Registry Hive Dump via reg.exe", detection_type: "behavioral", rule_id: "SOC-T1003-002-003", mitre_techniques: ["OS Credential Dumping: Security Account Manager"], mitre_ids: ["T1003.002"], affected_users: ["NT AUTHORITY\\SYSTEM"], affected_hosts: ["WIN-SOC-PROD-05"], count: 5, description: "reg.exe saved the SAM registry hive to disk — exposing local account credentials. Combined with LSASS dump, attacker obtained complete local and domain credential material.", timestamp: "2026-03-27 03:17:30" },
+    { id: "fnd-u003-13", severity: "high", title: "Certutil Ingress Tool Transfer — Payload Downloaded", detection_type: "heuristic", rule_id: "SOC-T1105-003", mitre_techniques: ["Ingress Tool Transfer"], mitre_ids: ["T1105"], affected_users: ["WIN-SOC\\DBAdmin"], affected_hosts: ["WIN-SOC-PROD-06"], count: 4, description: "certutil.exe used to download a secondary payload from the C2 server — a living-off-the-land (LOLBAS) technique to bypass application whitelisting and download additional attack tools.", timestamp: "2026-03-27 04:02:00" },
+    { id: "fnd-u003-14", severity: "high", title: "Unauthorized SYSVOL Share Access on Domain Controller", detection_type: "heuristic", rule_id: "SOC-T1041-SYSVOL-003", mitre_techniques: ["Exfiltration Over C2 Channel"], mitre_ids: ["T1041"], affected_users: ["WIN-SOC\\DBAdmin"], affected_hosts: ["WIN-SOC-DC-01"], count: 3, description: "DBAdmin accessed the SYSVOL share on WIN-SOC-DC-01 (event 5140) via explorer.exe — unauthorized access to Group Policy files and scripts, enabling further privilege escalation and lateral movement.", timestamp: "2026-03-27 05:33:00" },
+  ]
+
+  // ---------- Attack Chains (from user003logs.json attack_chains) ----------
+  const chains: MockChain[] = [
+    {
+      chain_id: "chain-ds-003-01",
+      chain_index: 1,
+      title: "Lateral Movement via SMB + LSASS Credential Dump",
+      computer: "WIN-SOC-PROD-01",
+      chain_confidence: 0.97,
+      kill_chain_phases: ["execution", "lateral-movement", "credential-access"],
+      affected_users: ["WIN-SOC\\Dev-01", "NT AUTHORITY\\SYSTEM", "WIN-SOC\\User1", "WIN-SOC\\Admin"],
+      affected_hosts: ["WIN-SOC-PROD-01", "WIN-SOC-PROD-02"],
+      events: ["fnd-ds-003-log-1", "fnd-ds-003-log-2", "fnd-ds-003-log-3", "fnd-ds-003-log-4", "fnd-ds-003-log-5", "fnd-ds-003-log-6", "fnd-ds-003-log-7"],
+    },
+    {
+      chain_id: "chain-ds-003-02",
+      chain_index: 2,
+      title: "Spearphishing → Office Macro → Scheduled Task + Service Persistence",
+      computer: "WIN-SOC-PROD-03",
+      chain_confidence: 0.95,
+      kill_chain_phases: ["initial-access", "execution", "persistence"],
+      affected_users: ["WIN-SOC\\Analyst1", "NT AUTHORITY\\SYSTEM"],
+      affected_hosts: ["WIN-SOC-PROD-03"],
+      events: ["fnd-ds-003-log-8", "fnd-ds-003-log-9", "fnd-ds-003-log-10", "fnd-ds-003-log-11", "fnd-ds-003-log-12"],
+    },
+    {
+      chain_id: "chain-ds-003-03",
+      chain_index: 3,
+      title: "DLL Injection → SeDebugPrivilege Escalation → Event Log Clearing",
+      computer: "WIN-SOC-PROD-04",
+      chain_confidence: 0.96,
+      kill_chain_phases: ["privilege-escalation", "defense-evasion"],
+      affected_users: ["WIN-SOC\\SvcAcct", "NT AUTHORITY\\SYSTEM"],
+      affected_hosts: ["WIN-SOC-PROD-04"],
+      events: ["fnd-ds-003-log-13", "fnd-ds-003-log-14", "fnd-ds-003-log-15", "fnd-ds-003-log-16", "fnd-ds-003-log-17"],
+    },
+    {
+      chain_id: "chain-ds-003-04",
+      chain_index: 4,
+      title: "Credential Harvesting via ProcDump + SAM Dump + Pass-the-Hash",
+      computer: "WIN-SOC-PROD-05",
+      chain_confidence: 0.98,
+      kill_chain_phases: ["credential-access", "lateral-movement"],
+      affected_users: ["WIN-SOC\\BackupOp", "NT AUTHORITY\\SYSTEM"],
+      affected_hosts: ["WIN-SOC-PROD-05", "WIN-SOC-DC-01"],
+      events: ["fnd-ds-003-log-18", "fnd-ds-003-log-19", "fnd-ds-003-log-20", "fnd-ds-003-log-21", "fnd-ds-003-log-22"],
+    },
+    {
+      chain_id: "chain-ds-003-05",
+      chain_index: 5,
+      title: "C2 HTTPS Beacon + DNS Tunneling + Ingress Tool Transfer",
+      computer: "WIN-SOC-PROD-06",
+      chain_confidence: 0.97,
+      kill_chain_phases: ["command-and-control", "execution"],
+      affected_users: ["WIN-SOC\\DBAdmin", "NT AUTHORITY\\SYSTEM"],
+      affected_hosts: ["WIN-SOC-PROD-06"],
+      events: ["fnd-ds-003-log-23", "fnd-ds-003-log-24", "fnd-ds-003-log-25", "fnd-ds-003-log-26", "fnd-ds-003-log-27"],
+    },
+    {
+      chain_id: "chain-ds-003-06",
+      chain_index: 6,
+      title: "Data Staging via robocopy → 7-Zip Archive → FTP + HTTPS Exfiltration",
+      computer: "WIN-SOC-PROD-06",
+      chain_confidence: 0.99,
+      kill_chain_phases: ["collection", "exfiltration"],
+      affected_users: ["WIN-SOC\\DBAdmin", "NT AUTHORITY\\SYSTEM"],
+      affected_hosts: ["WIN-SOC-PROD-06", "WIN-SOC-DC-01"],
+      events: ["fnd-ds-003-log-28", "fnd-ds-003-log-29", "fnd-ds-003-log-30", "fnd-ds-003-log-31", "fnd-ds-003-log-32"],
+    },
+  ]
+
+  // ---------- Summary (derived from user003logs.json ai_summary_report) ----------
+  const aiReport = `
+# 🔐 AI FORENSIC ANALYSIS REPORT
+
+---
+
+## 📌 1. REPORT METADATA
+| Field | Value |
+|-------|-------|
+| Dataset | user003logs.csv |
+| Generated On | 2026-04-13 10:00:00 UTC |
+| Risk Level | 🔴 CRITICAL (97%) |
+| Total Logs | 10,000 |
+| Threat Events | 120 |
+| Attack Chains | 6 |
+| Affected Hosts | 6 |
+| Affected Users | 8 |
+
+---
+
+## 🧠 2. EXECUTIVE SUMMARY
+A **multi-vector critical threat campaign** was detected in **user003logs.csv** spanning **6 distinct attack chains** across 10 MITRE ATT&CK tactic categories.
+
+Primary attack vectors: PowerShell Encoded Command Execution, LSASS Memory Dumping (Mimikatz + ProcDump), Spearphishing-driven Initial Access, DLL Injection with Privilege Escalation, Event Log Clearing, Pass-the-Hash Lateral Movement, C2 Beaconing via HTTPS & DNS Tunneling, and Dual-Channel Data Exfiltration.
+
+Attack observed across:
+- **WIN-SOC-PROD-01**
+- **WIN-SOC-PROD-02**
+- **WIN-SOC-PROD-03**
+- **WIN-SOC-PROD-04**
+- **WIN-SOC-PROD-05**
+- **WIN-SOC-PROD-06**
+- **WIN-SOC-DC-01**
+
+Immediate containment and forensic investigation is required.
+
+---
+
+## ⏱️ 3. ATTACK TIMELINE
+| Time (UTC) | Host | Event Description |
+|------------|------|-------------------|
+| 2026-03-26 23:56:48 | WIN-SOC-PROD-01 | Encoded IEX Download (PowerShell C2) |
+| 2026-03-26 23:57:38 | WIN-SOC-PROD-01/02 | LSASS Memory Dump (mimikatz.exe) |
+| 2026-03-27 01:10:05 | WIN-SOC-PROD-03 | Spearphishing Email Opened — Macro Execution |
+| 2026-03-27 01:10:45 | WIN-SOC-PROD-03 | Malicious Scheduled Task + Service Installed |
+| 2026-03-27 02:05:00 | WIN-SOC-PROD-04 | DLL Injection into svchost.exe |
+| 2026-03-27 02:07:10 | WIN-SOC-PROD-04 | Windows Event Logs Cleared (wevtutil) |
+| 2026-03-27 03:15:30 | WIN-SOC-PROD-05 | LSASS Dump via ProcDump + SAM Hive Dump |
+| 2026-03-27 03:16:45 | WIN-SOC-DC-01 | Pass-the-Hash Kerberos TGT Request |
+| 2026-03-27 04:00:10 | WIN-SOC-PROD-06 | HTTPS C2 Beacon + DNS Tunneling |
+| 2026-03-27 04:02:00 | WIN-SOC-PROD-06 | certutil Payload Download (Keylogger) |
+| 2026-03-27 05:30:00 | WIN-SOC-PROD-06 | Data Staging via robocopy + 7-Zip Archive |
+| 2026-03-27 05:31:30 | WIN-SOC-PROD-06 | FTP + HTTPS Exfiltration to 91.108.4.10 |
+| 2026-03-27 05:33:00 | WIN-SOC-DC-01 | Unauthorized SYSVOL Share Access |
+
+---
+
+## 🧩 4. ATTACK CHAINS OVERVIEW
+- **Chain 1:** PowerShell Encoded Dropper → SMB Lateral Movement → LSASS Credential Dump (Mimikatz)
+- **Chain 2:** Spearphishing Attachment → Office Macro → Scheduled Task + Malicious Service (Persistence)
+- **Chain 3:** DLL Injection into svchost → SeDebugPrivilege Escalation → Event Log + Audit Trail Clearing
+- **Chain 4:** Explicit Cred Logon → ProcDump LSASS → NTLM Hash → Pass-the-Hash → SAM Hive Dump
+- **Chain 5:** HTTPS C2 Beacon → DNS Tunneling → certutil Ingress Tool Transfer → Keylogger Dropped
+- **Chain 6:** robocopy Data Staging → 7-Zip Password Archive → FTP Exfil → HTTPS POST Exfil → SYSVOL Access
+
+---
+
+## 🎯 5. MITRE ATT&CK MAPPING
+| Technique ID | Name | Tactic |
+|--------------|------|--------|
+| T1566.001 | Spearphishing Attachment | Initial Access |
+| T1059.001 | PowerShell Encoded Command Execution | Execution |
+| T1053.005 | Scheduled Task | Persistence |
+| T1543.003 | Windows Service Installation | Persistence |
+| T1055.001 | DLL Injection into svchost | Privilege Escalation |
+| T1068 | Exploitation for Privilege Escalation (SeDebugPrivilege) | Privilege Escalation |
+| T1070.001 | Clear Windows Event Logs | Defense Evasion |
+| T1003.001 | LSASS Memory Dump | Credential Access |
+| T1003.002 | SAM Registry Hive Dump | Credential Access |
+| T1550.002 | Pass the Hash | Lateral Movement |
+| T1021.002 | SMB Admin Share | Lateral Movement |
+| T1071.001 | C2 via HTTPS Beacon | Command & Control |
+| T1071.004 | DNS Tunneling | Command & Control |
+| T1105 | Ingress Tool Transfer via certutil | Command & Control |
+| T1074.001 | Local Data Staging | Collection |
+| T1560.001 | Archive Collected Data (7-Zip) | Collection |
+| T1041 | Exfiltration Over C2 Channel | Exfiltration |
+
+---
+
+## 🚨 6. FINDINGS SUMMARY
+| Severity | Finding | Count |
+|----------|---------|-------|
+| 🔴 CRITICAL | LSASS Credential Dumping (Mimikatz + ProcDump) | 20 |
+| 🔴 CRITICAL | Lateral Movement via SMB Admin Share | 20 |
+| 🔴 CRITICAL | Exfiltration Over C2 Channel (FTP + HTTPS) | 15 |
+| 🔴 CRITICAL | DLL Injection + Privilege Escalation | 10 |
+| 🔴 CRITICAL | Data Staging + 7-Zip Archive | 10 |
+| 🟠 HIGH | Spearphishing Attachment + Macro | 15 |
+| 🟠 HIGH | PowerShell Encoded Execution | 20 |
+| 🟠 HIGH | Scheduled Task + Service Persistence | 10 |
+| 🟡 MEDIUM | DLL Injection + Event Log Clearing | 10 |
+| 🟡 MEDIUM | SAM Registry Hive Dump | 5 |
+| 🟡 MEDIUM | certutil Ingress Tool Transfer | 4 |
+
+---
+
+## 🖥️ 7. AFFECTED ENTITIES
+**Hosts**
+- WIN-SOC-PROD-01 — PowerShell dropper, LSASS dump source
+- WIN-SOC-PROD-02 — SMB lateral movement target, LSASS dump
+- WIN-SOC-PROD-03 — Phishing initial access, scheduled task/service persistence
+- WIN-SOC-PROD-04 — DLL injection, privilege escalation, event log clearing
+- WIN-SOC-PROD-05 — ProcDump LSASS, SAM hive dump, Pass-the-Hash origin
+- WIN-SOC-PROD-06 — C2 beacon, DNS tunneling, data staging, exfiltration
+- WIN-SOC-DC-01 — Pass-the-Hash target, SYSVOL unauthorized access
+
+**Users**
+- WIN-SOC\\Dev-01
+- WIN-SOC\\User1
+- WIN-SOC\\Admin
+- WIN-SOC\\Analyst1
+- WIN-SOC\\SvcAcct
+- WIN-SOC\\BackupOp
+- WIN-SOC\\DBAdmin
+- NT AUTHORITY\\SYSTEM
+
+---
+
+## 🛡️ 8. RECOMMENDATIONS
+- **Isolate all 7 affected hosts** immediately from the network
+- **Enable Credential Guard** on all endpoints to block LSASS memory access
+- **Deploy macro execution policies** — disable Office VBA macros via GPO for non-admin users
+- **Block certutil.exe** from making outbound network connections via AppLocker/WDAC
+- **Monitor and alert** on wevtutil.exe event log clearing by non-audit processes
+- **Restrict DLL loading** from non-standard paths using application whitelisting
+- **Block outbound FTP and HTTPS** to 91.108.4.10 and 185.220.101.42 at perimeter
+- **Audit SYSVOL and NETLOGON** share access logs for unauthorized reads
+- **Reset all 8 compromised accounts** and enable Protected Users group for privileged accounts
+- **Enable Script Block Logging** (Event ID 4104) and Sysmon process injection monitoring
+
+---
+
+## 📊 9. RISK ASSESSMENT
+**Overall Risk Score: 97% (CRITICAL)**
+
+| Dimension | Rating |
+|-----------|--------|
+| Impact | HIGH |
+| Likelihood | HIGH |
+| Severity | CRITICAL |
+| Confidence | 97% |
+`
+
+  const summary: MockSummary = {
+    scan_id: "user-003",
+    generated_at: "2026-04-13T10:00:00Z",
+    executive_briefing: "A CRITICAL multi-vector APT campaign was detected in user003logs.csv. Analysis identified 120 threat events across 6 hosts, 7 affected computers, and 8 compromised accounts spanning 6 attack chains. Primary attack vectors: PowerShell Encoded Execution, LSASS/ProcDump Credential Dumping, Spearphishing + Macro Persistence, DLL Injection + Privilege Escalation, HTTPS/DNS C2 Beaconing, and Dual-Channel Data Exfiltration (FTP + HTTPS). Immediate containment required.",
+    content_markdown: aiReport,
+    ai_summary_report: aiReport,
+    model: "Gemini-2.5-Pro",
+    sections: {
+      executive_summary: "A CRITICAL multi-vector APT campaign was detected in user003logs.csv spanning 6 attack chains across 10 MITRE ATT&CK tactic categories. Techniques: PowerShell Encoded Execution (T1059.001), LSASS Dump (T1003.001), ProcDump + SAM Hive (T1003.002), Spearphishing (T1566.001), Scheduled Task/Service Persistence (T1053.005/T1543.003), DLL Injection (T1055.001), Event Log Clearing (T1070.001), Pass-the-Hash (T1550.002), C2 Beacon (T1071.001/T1071.004), certutil Download (T1105), Data Staging + 7-Zip (T1074.001/T1560.001), FTP+HTTPS Exfiltration (T1041). Risk Score: 97% CRITICAL.",
+      attack_narrative: "Between 2026-03-26 23:56 UTC and 2026-03-27 05:33 UTC, a sophisticated threat actor executed a 6-chain multi-vector campaign. Chain 1 began with encoded PowerShell droppers on PROD-01/02 and mimikatz LSASS dumps. Chain 2 delivered a spearphishing macro on PROD-03 creating scheduled task and service persistence. Chain 3 used DLL injection on PROD-04 to escalate to SYSTEM and clear event logs. Chain 4 on PROD-05 used ProcDump to harvest LSASS credentials and Pass-the-Hash to target DC-01. Chain 5 on PROD-06 established HTTPS C2 with DNS tunneling and dropped a keylogger via certutil. Chain 6 staged data with robocopy, archived with 7-Zip, and exfiltrated via dual FTP + HTTPS channels to 91.108.4.10, culminating in unauthorized SYSVOL access on DC-01.",
+      affected_assets: "**Hosts:** WIN-SOC-PROD-01, WIN-SOC-PROD-02, WIN-SOC-PROD-03, WIN-SOC-PROD-04, WIN-SOC-PROD-05, WIN-SOC-PROD-06, WIN-SOC-DC-01\n\n**Users:** WIN-SOC\\Dev-01, WIN-SOC\\User1, WIN-SOC\\Admin, WIN-SOC\\Analyst1, WIN-SOC\\SvcAcct, WIN-SOC\\BackupOp, WIN-SOC\\DBAdmin, NT AUTHORITY\\SYSTEM",
+      remediation_steps: "1. **Isolate** all 7 affected hosts from the network immediately.\n2. **Reset credentials** for all 8 compromised accounts and enable Protected Users group.\n3. **Enable Credential Guard** on all domain endpoints to prevent future LSASS access.\n4. **Block** outbound connections to 185.220.101.42 and 91.108.4.10 at the perimeter firewall.\n5. **Disable VBA macros** via GPO and deploy YARA rules for macro dropper detection.\n6. **Monitor SYSVOL and NETLOGON** share access and restrict to Domain Controllers and authorized admin accounts.\n7. **Deploy Sysmon** with process injection and DLL monitoring rules across all endpoints.\n8. **Enable Script Block Logging** (Event ID 4104) to capture future encoded PowerShell payloads.",
+    },
+  }
+
+  return { analysis, events: [], findings, chains, summary }
+}
+
 // ─── BUILD ALL MOCK DATA ──────────────────────────────────────────────────────
 
 const USER_UPLOAD_DATASET = buildUserUploadDataset()
 const USER_001_DATASET = buildUser001Dataset()
 const USER_002_DATASET = buildUser002Dataset()
-export const MOCK_DATASETS = [...DATASET_META.map(buildMockDataset), USER_UPLOAD_DATASET, USER_001_DATASET, USER_002_DATASET]
+const USER_003_DATASET = buildUser003Dataset()
+export const MOCK_DATASETS = [...DATASET_META.map(buildMockDataset), USER_UPLOAD_DATASET, USER_001_DATASET, USER_002_DATASET, USER_003_DATASET]
 
 // ─── LOOKUP HELPERS ───────────────────────────────────────────────────────────
 

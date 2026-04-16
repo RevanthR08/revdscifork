@@ -17,14 +17,62 @@ import {
 // Simulates a short async delay for realistic UX
 const delay = (ms = 150) => new Promise(res => setTimeout(res, ms))
 
+const FALLBACK_SCAN_ID = "mock-upload-id"
+
+function normalizeScanId(scanId: string) {
+  const raw = scanId.trim().toLowerCase()
+  if (!raw) return ""
+
+  const userMatch = raw.match(/^user[-_]?(\d{1,4})$/)
+  if (userMatch) {
+    const n = Number.parseInt(userMatch[1], 10)
+    if (!Number.isNaN(n)) {
+      return `user-${String(n).padStart(3, "0")}`
+    }
+  }
+
+  const dsMatch = raw.match(/^ds[-_]?(\d{1,4})$/)
+  if (dsMatch) {
+    const n = Number.parseInt(dsMatch[1], 10)
+    if (!Number.isNaN(n)) {
+      return `ds-${String(n).padStart(3, "0")}`
+    }
+  }
+
+  return raw
+}
+
+function resolveScanId(scanId: string) {
+  if (getMockAnalysis(scanId)) {
+    return scanId
+  }
+
+  const normalized = normalizeScanId(scanId)
+  if (normalized && getMockAnalysis(normalized)) {
+    return normalized
+  }
+
+  // If a user-specific ID is not preloaded, map it to ds-### where possible.
+  const userMatch = normalized.match(/^user-(\d{3,4})$/)
+  if (userMatch) {
+    const datasetId = `ds-${String(Number.parseInt(userMatch[1], 10)).padStart(3, "0")}`
+    if (getMockAnalysis(datasetId)) {
+      return datasetId
+    }
+  }
+
+  return FALLBACK_SCAN_ID
+}
+
 // Tracks which scan IDs have already been fully loaded this session.
 // Once a scan is in this set, all subsequent API calls for it return instantly
 // so navigating between Overview / AI Summary / Attack Chains never re-triggers the loading animation.
 const loadedScanCache = new Set<string>()
 
 async function delayForDataset(scanId: string, _multiplier = 1) {
+  const resolvedScanId = resolveScanId(scanId)
   // Skip delay on subsequent visits to the same scan — instant navigation
-  if (loadedScanCache.has(scanId)) {
+  if (loadedScanCache.has(resolvedScanId)) {
     await delay(50)
     return
   }
@@ -34,7 +82,7 @@ async function delayForDataset(scanId: string, _multiplier = 1) {
 
 // Mark a scan as fully loaded so future calls skip the delay
 function markScanLoaded(scanId: string) {
-  loadedScanCache.add(scanId)
+  loadedScanCache.add(resolveScanId(scanId))
 }
 
 /**
@@ -49,11 +97,12 @@ export async function listScans(_limit = 20, _offset = 0) {
  * GET a single analysis by ID (previously: GET /scans/{id})
  */
 export async function getScan(id: string) {
-  await delayForDataset(id, 1)
-  const analysis = getMockAnalysis(id)
+  const resolvedId = resolveScanId(id)
+  await delayForDataset(resolvedId, 1)
+  const analysis = getMockAnalysis(resolvedId)
   if (!analysis) throw new Error(`Analysis ${id} not found`)
   // Mark this scan as loaded — all further calls for this ID will be instant
-  markScanLoaded(id)
+  markScanLoaded(resolvedId)
   return analysis
 }
 
@@ -61,8 +110,9 @@ export async function getScan(id: string) {
  * GET events for a scan (previously: GET /scans/{id}/events)
  */
 export async function getScanEvents(id: string, params: { limit?: number; offset?: number; category?: string } = {}) {
-  await delayForDataset(id, 0.85)
-  const allEvents = getMockEvents(id)
+  const resolvedId = resolveScanId(id)
+  await delayForDataset(resolvedId, 0.85)
+  const allEvents = getMockEvents(resolvedId)
   const limited = allEvents.slice(params.offset || 0, (params.offset || 0) + (params.limit || allEvents.length))
   return { events: limited }
 }
@@ -71,35 +121,39 @@ export async function getScanEvents(id: string, params: { limit?: number; offset
  * GET categories for a scan (previously: GET /scans/{id}/categories)
  */
 export async function getScanCategories(id: string) {
-  await delayForDataset(id, 0.35)
-  return { categories: getMockCategories(id) }
+  const resolvedId = resolveScanId(id)
+  await delayForDataset(resolvedId, 0.35)
+  return { categories: getMockCategories(resolvedId) }
 }
 
 /**
  * GET findings for a scan (previously: GET /scans/{id}/findings)
  */
 export async function getScanFindings(id: string) {
-  await delayForDataset(id, 0.7)
-  markScanLoaded(id)
-  return { findings: getMockFindings(id) }
+  const resolvedId = resolveScanId(id)
+  await delayForDataset(resolvedId, 0.7)
+  markScanLoaded(resolvedId)
+  return { findings: getMockFindings(resolvedId) }
 }
 
 /**
  * GET attack chains (previously: GET /scans/{id}/chains)
  */
 export async function getScanChains(id: string) {
-  await delayForDataset(id, 0.45)
-  markScanLoaded(id)
-  return { chains: getMockChains(id) }
+  const resolvedId = resolveScanId(id)
+  await delayForDataset(resolvedId, 0.45)
+  markScanLoaded(resolvedId)
+  return { chains: getMockChains(resolvedId) }
 }
 
 /**
  * GET AI summary (previously: GET /scans/{id}/summary)
  */
 export async function getScanSummary(id: string) {
-  await delayForDataset(id, 1.15) // Slightly longer to simulate AI generation
-  markScanLoaded(id)
-  const summary = getMockSummary(id)
+  const resolvedId = resolveScanId(id)
+  await delayForDataset(resolvedId, 1.15) // Slightly longer to simulate AI generation
+  markScanLoaded(resolvedId)
+  const summary = getMockSummary(resolvedId)
   if (!summary) throw new Error(`Summary for ${id} not found`)
   return summary
 }
@@ -120,10 +174,10 @@ export async function deleteAnalysis(_id: string) {
  */
 export async function uploadFile(file: File) {
   await delay(1500)
-  const matchedScanId = USER_CSV_TO_SCAN_ID[file.name]
+  const matchedScanId = USER_CSV_TO_SCAN_ID[file.name] || USER_CSV_TO_SCAN_ID[file.name.toLowerCase()]
   return { 
     message: "Success", 
-    scan_id: matchedScanId ?? "mock-upload-id"
+    scan_id: matchedScanId ? normalizeScanId(matchedScanId) : FALLBACK_SCAN_ID
   }
 }
 

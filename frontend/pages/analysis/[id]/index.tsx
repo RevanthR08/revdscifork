@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/router"
-import { Loader2, Activity, AlertTriangle, BarChart3, GitBranch } from "lucide-react"
+import { Loader2, Activity, AlertTriangle, BarChart3, GitBranch, Download } from "lucide-react"
 import DashboardLayout from "@/components/layout/DashboardLayout"
 import StatCard from "@/components/dashboard/StatCard"
 import ThreatLevel from "@/components/dashboard/ThreatLevel"
@@ -71,6 +71,7 @@ export default function DashboardPage() {
   const [chains, setChains] = useState<Chain[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingStage, setLoadingStage] = useState(0)
+  const [downloadingPdf, setDownloadingPdf] = useState(false)
 
   const loadingStages = [
     "Connecting to analysis database...",
@@ -159,6 +160,38 @@ export default function DashboardPage() {
     }
   }
 
+  const downloadOverviewPdf = async () => {
+    const scanId = String(analysis?.scan_id || id || "")
+    if (!scanId) {
+      alert("Analysis ID is missing for this report")
+      return
+    }
+
+    setDownloadingPdf(true)
+    try {
+      const response = await fetch(`/api/reports/${encodeURIComponent(scanId)}`)
+      if (!response.ok) {
+        throw new Error("PDF not found for this analysis")
+      }
+
+      const blob = await response.blob()
+      const objectUrl = URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      const baseName = (analysis?.file_name || scanId).replace(/\.[^/.]+$/, "")
+
+      link.href = objectUrl
+      link.download = `${baseName}-forensic-report.pdf`
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      URL.revokeObjectURL(objectUrl)
+    } catch (err: any) {
+      alert(`Failed to download PDF: ${err.message}`)
+    } finally {
+      setDownloadingPdf(false)
+    }
+  }
+
   if (loading) {
     return (
       <DashboardLayout analysisId={id as string}>
@@ -210,11 +243,27 @@ export default function DashboardPage() {
     <DashboardLayout analysisId={analysis.scan_id}>
       <div className="space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-2xl font-bold text-white">Analysis Overview</h1>
-          <p className="text-sm text-zinc-400 mt-1">
-            {analysis.file_name} · {new Date(analysis.generated_at).toLocaleDateString()}
-          </p>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold text-white">Analysis Overview</h1>
+            <p className="text-sm text-zinc-400 mt-1">
+              {analysis.file_name} · {new Date(analysis.generated_at).toLocaleDateString()}
+            </p>
+          </div>
+          <button
+            onClick={downloadOverviewPdf}
+            disabled={downloadingPdf}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors"
+            style={{
+              borderRadius: "6px",
+              backgroundColor: downloadingPdf ? "#27272a" : "#18181b",
+              color: "#ffffff",
+              border: "1px solid #3f3f46",
+              cursor: downloadingPdf ? "not-allowed" : "pointer",
+            }}
+          >
+            {downloadingPdf ? <><Loader2 className="w-4 h-4 animate-spin" />Downloading...</> : <><Download className="w-4 h-4" />Generate PDF</>}
+          </button>
         </div>
 
         {/* Stats Cards */}

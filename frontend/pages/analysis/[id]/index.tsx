@@ -70,13 +70,40 @@ export default function DashboardPage() {
   const [findings, setFindings] = useState<Finding[]>([])
   const [chains, setChains] = useState<Chain[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingStage, setLoadingStage] = useState(0)
+
+  const loadingStages = [
+    "Connecting to analysis database...",
+    "Fetching pre-loaded logs and metadata...",
+    "Parsing log rows and event fields...",
+    "Running rule-based detections on events...",
+    "ML is finalizing the output...",
+  ]
+
+  const loadingBarWidths = ["w-1/5", "w-2/5", "w-3/5", "w-4/5", "w-full"]
 
   useEffect(() => {
     if (id) loadData()
   }, [id])
 
+  useEffect(() => {
+    if (!loading) return
+
+    setLoadingStage(0)
+    const timers = [900, 1800, 3000, 4200].map((ms, index) =>
+      window.setTimeout(() => {
+        setLoadingStage(index + 1)
+      }, ms)
+    )
+
+    return () => {
+      timers.forEach((timer) => window.clearTimeout(timer))
+    }
+  }, [loading])
+
   const loadData = async () => {
     if (!id) return
+    setLoading(true)
     try {
       const scanId = id as string
       const [analysisData, categoriesData, findingsData, chainsData] = await Promise.all([
@@ -135,8 +162,17 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <DashboardLayout analysisId={id as string}>
-        <div className="flex items-center justify-center py-24">
+        <div className="flex flex-col items-center justify-center gap-4 py-24 text-center">
           <Loader2 className="w-8 h-8 text-zinc-500 animate-spin" />
+          <div className="space-y-1">
+            <p className="text-sm font-medium text-white">Loading analysis overview</p>
+            <p className="text-xs text-zinc-400">{loadingStages[Math.min(loadingStage, loadingStages.length - 1)]}</p>
+          </div>
+          <div className="w-full max-w-sm rounded-full bg-zinc-800/80 p-1">
+            <div
+              className={`h-1.5 rounded-full bg-gradient-to-r from-[#3b3486] via-sky-500 to-emerald-400 transition-all duration-500 ${loadingBarWidths[Math.min(loadingStage, loadingBarWidths.length - 1)]}`}
+            />
+          </div>
         </div>
       </DashboardLayout>
     )

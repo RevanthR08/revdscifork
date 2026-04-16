@@ -17,6 +17,21 @@ import {
 // Simulates a short async delay for realistic UX
 const delay = (ms = 150) => new Promise(res => setTimeout(res, ms))
 
+function getDatasetLatencyMs(scanId: string, multiplier = 1) {
+  const analysis = getMockAnalysis(scanId)
+  const totalLogs = analysis?.total_logs || 0
+
+  if (!totalLogs) {
+    return 600
+  }
+
+  return Math.max(600, Math.round(totalLogs * multiplier))
+}
+
+async function delayForDataset(scanId: string, multiplier = 1) {
+  await delay(getDatasetLatencyMs(scanId, multiplier))
+}
+
 /**
  * LIST all analyses (previously: GET /scans)
  */
@@ -29,7 +44,7 @@ export async function listScans(_limit = 20, _offset = 0) {
  * GET a single analysis by ID (previously: GET /scans/{id})
  */
 export async function getScan(id: string) {
-  await delay()
+  await delayForDataset(id, 1)
   const analysis = getMockAnalysis(id)
   if (!analysis) throw new Error(`Analysis ${id} not found`)
   return analysis
@@ -39,7 +54,7 @@ export async function getScan(id: string) {
  * GET events for a scan (previously: GET /scans/{id}/events)
  */
 export async function getScanEvents(id: string, params: { limit?: number; offset?: number; category?: string } = {}) {
-  await delay()
+  await delayForDataset(id, 0.85)
   const allEvents = getMockEvents(id)
   const limited = allEvents.slice(params.offset || 0, (params.offset || 0) + (params.limit || allEvents.length))
   return { events: limited }
@@ -49,7 +64,7 @@ export async function getScanEvents(id: string, params: { limit?: number; offset
  * GET categories for a scan (previously: GET /scans/{id}/categories)
  */
 export async function getScanCategories(id: string) {
-  await delay()
+  await delayForDataset(id, 0.35)
   return { categories: getMockCategories(id) }
 }
 
@@ -57,7 +72,7 @@ export async function getScanCategories(id: string) {
  * GET findings for a scan (previously: GET /scans/{id}/findings)
  */
 export async function getScanFindings(id: string) {
-  await delay()
+  await delayForDataset(id, 0.7)
   return { findings: getMockFindings(id) }
 }
 
@@ -65,7 +80,7 @@ export async function getScanFindings(id: string) {
  * GET attack chains (previously: GET /scans/{id}/chains)
  */
 export async function getScanChains(id: string) {
-  await delay()
+  await delayForDataset(id, 0.45)
   return { chains: getMockChains(id) }
 }
 
@@ -73,7 +88,7 @@ export async function getScanChains(id: string) {
  * GET AI summary (previously: GET /scans/{id}/summary)
  */
 export async function getScanSummary(id: string) {
-  await delay(600) // Slightly longer to simulate AI generation
+  await delayForDataset(id, 1.15) // Slightly longer to simulate AI generation
   const summary = getMockSummary(id)
   if (!summary) throw new Error(`Summary for ${id} not found`)
   return summary

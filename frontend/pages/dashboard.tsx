@@ -4,7 +4,8 @@ import Link from "next/link"
 import { motion } from "framer-motion"
 import DashboardLayout from "@/components/layout/DashboardLayout"
 import UploadZone from "@/components/dashboard/UploadZone"
-import { CheckCircle, Loader2, BarChart3, AlertTriangle, ShieldAlert, Link2 } from "lucide-react"
+import { Skeleton } from "@/components/dashboard/Skeletons"
+import { CheckCircle, BarChart3, AlertTriangle, ShieldAlert, Link2 } from "lucide-react"
 import { listScans } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
@@ -19,6 +20,66 @@ interface Analysis {
   status?: string
 }
 
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+function countNonEmptyLines(text: string) {
+  return text.split(/\r?\n/).filter((line) => line.trim().length > 0).length
+}
+
+function estimateLogsFromJson(parsed: unknown): number {
+  if (Array.isArray(parsed)) return parsed.length
+  if (!parsed || typeof parsed !== "object") return 0
+
+  const record = parsed as Record<string, unknown>
+  const candidateArrays = [record.logs, record.events, record.data, record.rows]
+  for (const candidate of candidateArrays) {
+    if (Array.isArray(candidate)) return candidate.length
+  }
+
+  return 0
+}
+
+async function estimateLogCount(file: File): Promise<number> {
+  const lowerName = file.name.toLowerCase()
+  const looksLikeJson = file.type.includes("json") || lowerName.endsWith(".json")
+  const looksLikeCsv =
+    file.type.includes("csv") || lowerName.endsWith(".csv") || lowerName.endsWith(".tsv")
+  const looksLikeText =
+    file.type.startsWith("text/") ||
+    lowerName.endsWith(".txt") ||
+    lowerName.endsWith(".log") ||
+    lowerName.endsWith(".ndjson")
+
+  if (looksLikeJson || looksLikeCsv || looksLikeText) {
+    const text = await file.text()
+
+    if (looksLikeJson) {
+      try {
+        const parsed = JSON.parse(text)
+        const jsonCount = estimateLogsFromJson(parsed)
+        if (jsonCount > 0) return jsonCount
+      } catch {
+        // fall back to line-based estimation
+      }
+    }
+
+    const lines = countNonEmptyLines(text)
+    if (looksLikeCsv && lines > 0) {
+      return Math.max(0, lines - 1)
+    }
+    return Math.max(1, lines)
+  }
+
+  // Fallback for unknown/binary inputs: rough estimate by bytes per log entry.
+  return Math.max(1, Math.round(file.size / 180))
+}
+
+function getDelayFromLogCount(logCount: number) {
+  // 10k logs -> 10s, 20k logs -> 20s (linear at 1 log = 1ms)
+  const ms = Math.round(logCount)
+  return Math.min(120000, Math.max(1000, ms))
+}
+
 export default function DashboardPage() {
   const router = useRouter()
   const [analyses, setAnalyses] = useState<Analysis[]>([])
@@ -31,12 +92,19 @@ export default function DashboardPage() {
   }, [])
 
   const loadAnalyses = async () => {
+    const startedAt = Date.now()
+    const minimumLoadingMs = 2700
+
     try {
       const data = await listScans()
       setAnalyses(data.scans || [])
     } catch (err) {
       console.error("Failed to load analyses:", err)
     } finally {
+      const elapsed = Date.now() - startedAt
+      if (elapsed < minimumLoadingMs) {
+        await new Promise((resolve) => setTimeout(resolve, minimumLoadingMs - elapsed))
+      }
       setLoading(false)
     }
   }
@@ -45,19 +113,26 @@ export default function DashboardPage() {
     setUploading(true)
     setUploadProgress(0)
 
+    const estimatedLogs = await estimateLogCount(file)
+    const simulatedDelayMs = getDelayFromLogCount(estimatedLogs)
+    const progressStartedAt = Date.now()
+
     const interval = setInterval(() => {
-      setUploadProgress((prev) => {
-        if (prev >= 95) {
-          clearInterval(interval)
-          return prev
-        }
-        return prev + 5
-      })
-    }, 100)
+      const elapsed = Date.now() - progressStartedAt
+      const progress = Math.min(95, Math.round((elapsed / simulatedDelayMs) * 95))
+      setUploadProgress((prev) => Math.max(prev, progress))
+      if (progress >= 95) {
+        clearInterval(interval)
+      }
+    }, 200)
 
     try {
       const { uploadFile } = await import("@/lib/api")
-      const result = await uploadFile(file)
+      const uploadPromise = uploadFile(file)
+
+      await Promise.all([uploadPromise, wait(simulatedDelayMs)])
+      const result = await uploadPromise
+
       setUploadProgress(100)
       clearInterval(interval)
 
@@ -88,6 +163,41 @@ export default function DashboardPage() {
     if (pct >= 40) return { label: "MEDIUM", className: "bg-yellow-500" }
     return { label: "LOW", className: "bg-green-500" }
   }
+
+  const DatasetRowSkeleton = () => (
+    <div className="bg-zinc-900 border border-zinc-800 rounded-md p-4">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-4">
+        <Skeleton className="w-10 h-10 rounded-md shrink-0" />
+
+        <div className="flex-1 min-w-0 space-y-2">
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-4 w-56 max-w-full" />
+            <Skeleton className="h-4 w-16 rounded-full" />
+          </div>
+          <Skeleton className="h-3 w-40 max-w-full" />
+        </div>
+
+        <div className="w-full flex items-center justify-between gap-4 md:w-auto md:justify-start md:gap-6">
+          <div className="text-right space-y-1">
+            <Skeleton className="h-4 w-10 ml-auto" />
+            <Skeleton className="h-3 w-8 ml-auto" />
+          </div>
+
+          <div className="text-right space-y-1">
+            <Skeleton className="h-4 w-12 ml-auto" />
+            <Skeleton className="h-3 w-8 ml-auto" />
+          </div>
+
+          <div className="text-right space-y-1">
+            <Skeleton className="h-4 w-10 ml-auto" />
+            <Skeleton className="h-3 w-8 ml-auto" />
+          </div>
+
+          <Skeleton className="w-6 h-6 rounded-full" />
+        </div>
+      </div>
+    </div>
+  )
 
   return (
     <DashboardLayout>
@@ -159,8 +269,16 @@ export default function DashboardPage() {
           <h2 className="text-sm font-bold text-white mb-4">Pre-Loaded Analysis Datasets</h2>
 
           {loading ? (
-            <div className="flex items-center justify-center py-12 bg-zinc-900 border border-zinc-800 rounded-md">
-              <Loader2 className="w-6 h-6 text-zinc-500 animate-spin" />
+            <div className="space-y-3 bg-zinc-900 border border-zinc-800 rounded-md p-4">
+              <div className="grid gap-3">
+                <Skeleton className="h-4 w-56" />
+                <Skeleton className="h-3 w-72 max-w-full" />
+              </div>
+              <div className="space-y-3 pt-2">
+                <DatasetRowSkeleton />
+                <DatasetRowSkeleton />
+                <DatasetRowSkeleton />
+              </div>
             </div>
           ) : analyses.length === 0 ? (
             <div className="text-center py-12 bg-zinc-900 border border-zinc-800 rounded-md">

@@ -22,6 +22,8 @@ export function AuthPage() {
 	const [error, setError] = React.useState('');
 	const [checkingSession, setCheckingSession] = React.useState(true);
 
+	const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 	// Check if already logged in on mount
 	React.useEffect(() => {
 		const session = getAuthSession();
@@ -38,8 +40,8 @@ export function AuthPage() {
 		
 		setLoading(true);
 		setError('');
-		// Simulate API call
-		await new Promise((res) => setTimeout(res, 800));
+		const simulatedDelay = 900 + Math.floor(Math.random() * 500);
+		await wait(simulatedDelay);
 
 		const session = authenticateByEmail(email, password);
 		if (!session) {

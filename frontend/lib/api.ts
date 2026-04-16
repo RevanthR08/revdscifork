@@ -17,19 +17,24 @@ import {
 // Simulates a short async delay for realistic UX
 const delay = (ms = 150) => new Promise(res => setTimeout(res, ms))
 
-function getDatasetLatencyMs(scanId: string, multiplier = 1) {
-  const analysis = getMockAnalysis(scanId)
-  const totalLogs = analysis?.total_logs || 0
+// Tracks which scan IDs have already been fully loaded this session.
+// Once a scan is in this set, all subsequent API calls for it return instantly
+// so navigating between Overview / AI Summary / Attack Chains never re-triggers the loading animation.
+const loadedScanCache = new Set<string>()
 
-  if (!totalLogs) {
-    return 600
+async function delayForDataset(scanId: string, _multiplier = 1) {
+  // Skip delay on subsequent visits to the same scan — instant navigation
+  if (loadedScanCache.has(scanId)) {
+    await delay(50)
+    return
   }
-
-  return Math.max(600, Math.round(totalLogs * multiplier))
+  // First load: fixed 3-second delay to simulate AI scanning
+  await delay(3000)
 }
 
-async function delayForDataset(scanId: string, multiplier = 1) {
-  await delay(getDatasetLatencyMs(scanId, multiplier))
+// Mark a scan as fully loaded so future calls skip the delay
+function markScanLoaded(scanId: string) {
+  loadedScanCache.add(scanId)
 }
 
 /**
@@ -47,6 +52,8 @@ export async function getScan(id: string) {
   await delayForDataset(id, 1)
   const analysis = getMockAnalysis(id)
   if (!analysis) throw new Error(`Analysis ${id} not found`)
+  // Mark this scan as loaded — all further calls for this ID will be instant
+  markScanLoaded(id)
   return analysis
 }
 
@@ -73,6 +80,7 @@ export async function getScanCategories(id: string) {
  */
 export async function getScanFindings(id: string) {
   await delayForDataset(id, 0.7)
+  markScanLoaded(id)
   return { findings: getMockFindings(id) }
 }
 
@@ -81,6 +89,7 @@ export async function getScanFindings(id: string) {
  */
 export async function getScanChains(id: string) {
   await delayForDataset(id, 0.45)
+  markScanLoaded(id)
   return { chains: getMockChains(id) }
 }
 
@@ -89,6 +98,7 @@ export async function getScanChains(id: string) {
  */
 export async function getScanSummary(id: string) {
   await delayForDataset(id, 1.15) // Slightly longer to simulate AI generation
+  markScanLoaded(id)
   const summary = getMockSummary(id)
   if (!summary) throw new Error(`Summary for ${id} not found`)
   return summary

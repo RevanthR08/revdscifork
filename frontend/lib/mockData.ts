@@ -69,7 +69,7 @@ export interface MockFinding {
   id: string
   severity: "critical" | "high" | "medium" | "low" | "info"
   title: string
-  detection_type: "rule" | "ml_anomaly" | "impossible_travel"
+  detection_type: "rule" | "ml_anomaly" | "impossible_travel" | "behavioral" | "yara_match" | "heuristic"
   rule_id: string
   mitre_techniques: string[]
   mitre_ids: string[]

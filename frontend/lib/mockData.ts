@@ -510,6 +510,8 @@ const UPLOAD_META = {
   id: "mock-upload-id",
   file: "uploaded_log_analysis.csv",
   date: new Date().toISOString().split("T")[0],
+  totalLogs: 45200,
+  totalThreats: 127,
   computers: ["WS-PROD-99", "WS-PROD-102"],
   users: ["CORP\\jsmith", "SYSTEM"],
   riskScore: 9200,

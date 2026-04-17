@@ -122,22 +122,24 @@ export default function ChatPage() {
     const hydrateChat = async () => {
       try {
         const res = await fetch("/api/chat/state")
-        if (res.ok) {
-          const data = await res.json()
-          if (Array.isArray(data.users) && Array.isArray(data.groups) && Array.isArray(data.messages) && data.groups.length) {
-            if (!mounted) return
-            setUsers(data.users)
-            setGroups(data.groups)
-            setMessages(data.messages)
-            setSelectedGroupId(data.selectedGroupId || data.groups[0]?.id || "")
-            setIsStateLoaded(true)
-            setInfoBanner("Loaded chat state from Supabase backend.")
-            return
-          }
+        if (!res.ok) {
+          throw new Error("Backend unconfigured or unavailable")
         }
-      } catch {
-        // fall back to local state below
+        const data = await res.json()
+        if (Array.isArray(data.users) && Array.isArray(data.groups) && Array.isArray(data.messages) && data.groups.length) {
+          if (!mounted) return
+          setUsers(data.users)
+          setGroups(data.groups)
+          setMessages(data.messages)
+          setSelectedGroupId(data.selectedGroupId || data.groups[0]?.id || "")
+          setIsStateLoaded(true)
+          setInfoBanner("Loaded chat state from Supabase backend.")
+          return
+        }
+      } catch (err) {
+        console.warn("Retrying local state load due to backend status:", err)
       }
+
 
       try {
         const state = await loadSecureChatState()
@@ -231,25 +233,7 @@ export default function ChatPage() {
     latestSnapshotRef.current = { users, groups, messages, selectedGroupId }
   }, [users, groups, messages, selectedGroupId])
 
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      const serialized = getSecureChatSerializedState()
-      if (!serialized) return
-      loadSecureChatStateFromSerialized(serialized)
-        .then((state) => {
-          setUsers(state.users)
-          setGroups(state.groups)
-          setMessages(state.messages)
-          setSelectedGroupId((prev) => prev || state.selectedGroupId)
-          console.log(`[${currentUserId}] Periodic sync: ${state.messages.length} messages, ${state.groups.length} groups`)
-        })
-        .catch(() => {
-          // ignore transient parse failures
-        })
-    }, 1500)
-
-    return () => window.clearInterval(timer)
-  }, [currentUserId])
+  // NOTE: Periodic polling removed — BroadcastChannel handles cross-tab sync in real time.
 
   useEffect(() => {
     if (!users.length || !groups.length) return
@@ -284,27 +268,10 @@ export default function ChatPage() {
 
     const serialized = JSON.stringify(state)
     syncRef.current?.publishSnapshot(serialized)
-    console.log(`[${currentUserId}] publishing snapshot: ${messages.length} messages, group ${selectedGroupId}`)
   }, [users, groups, messages, selectedGroupId, currentUserId])
 
-  useEffect(() => {
-    if (!isStateLoaded || !users.length || !groups.length) return
 
-    const state = {
-      users,
-      groups,
-      messages,
-      selectedGroupId,
-    }
-
-    void fetch("/api/chat/state", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(state),
-    }).catch(() => {
-      setInfoBanner("Could not persist chat state to Supabase.")
-    })
-  }, [isStateLoaded, users, groups, messages, selectedGroupId])
+  // NOTE: Backend POST removed — state is persisted to LocalStorage via saveSecureChatState.
 
   useEffect(() => {
     if (!selectedGroupId && visibleGroups[0]) {

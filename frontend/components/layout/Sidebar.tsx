@@ -42,7 +42,7 @@ const itemVariants = {
   visible: { opacity: 1, x: 0 },
 }
 
-export default function Sidebar({ analysisId, collapsed, onToggle, mobileOpen = false, onMobileClose }: SidebarProps) {
+const Sidebar = React.memo(function Sidebar({ analysisId, collapsed, onToggle, mobileOpen = false, onMobileClose }: SidebarProps) {
   const router = useRouter()
   const [role, setRole] = useState<"admin" | "user">("user")
 
@@ -112,7 +112,7 @@ export default function Sidebar({ analysisId, collapsed, onToggle, mobileOpen = 
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 py-4 px-3 overflow-y-auto">
+      <nav className="flex-1 py-4 px-3 overflow-y-auto font-montserrat">
         {/* Main Section */}
         <div className="mb-6">
           {!collapsed && (
@@ -276,4 +276,7 @@ export default function Sidebar({ analysisId, collapsed, onToggle, mobileOpen = 
       </div>
     </motion.aside>
   )
-}
+})
+
+export default Sidebar
+

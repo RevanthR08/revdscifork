@@ -110,8 +110,8 @@ export default function DashboardPage() {
       const [analysisData, categoriesData, findingsData, chainsData] = await Promise.all([
         getScan(scanId),
         getScanCategories(scanId),
-        getScanFindings(scanId),
-        getScanChains(scanId),
+        getScanFindings(scanId, true),
+        getScanChains(scanId, true),
       ])
 
       setAnalysis(analysisData)

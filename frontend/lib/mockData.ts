@@ -118,16 +118,16 @@ export interface MockSummary {
 // ─── DATASET METADATA ────────────────────────────────────────────────────────
 
 const DATASET_META = [
-  { id: "ds-001", file: "windows_soc_data_1_ee46.csv", date: "2026-04-02", computers: ["WIN-SOC-PROD-01", "WIN-SOC-PROD-02"], users: ["WIN-SOC\\Admin", "WIN-SOC\\User1", "NT AUTHORITY\\SYSTEM"], riskScore: 8750, threatType: "PowerShell Encoded Command Execution", mitre: "T1059.001", mitrePhase: "execution" },
-  { id: "ds-002", file: "windows_soc_data_2_5bff.csv", date: "2026-04-01", computers: ["WIN-SOC-PROD-01", "WIN-SOC-DEV-03"], users: ["WIN-SOC\\User1", "NT AUTHORITY\\SYSTEM", "WIN-SOC\\SvcAcct"], riskScore: 7200, threatType: "LSASS Memory Access", mitre: "T1003.001", mitrePhase: "credential-access" },
-  { id: "ds-003", file: "windows_soc_data_3_838b.csv", date: "2026-03-26", computers: ["WIN-SOC-PROD-01", "WIN-SOC-PROD-03"], users: ["WIN-SOC\\Admin", "WIN-SOC\\Dev-01", "WIN-SOC\\Backup"], riskScore: 9100, threatType: "Lateral Movement via SMB", mitre: "T1021.002", mitrePhase: "lateral-movement" },
-  { id: "ds-004", file: "windows_soc_data_4_068a.csv", date: "2026-03-29", computers: ["WIN-SOC-PROD-02", "WIN-SOC-DC-01"], users: ["WIN-SOC\\Dev-01", "WIN-SOC\\Admin", "NT AUTHORITY\\NETWORK SERVICE"], riskScore: 6800, threatType: "Scheduled Task Persistence", mitre: "T1053.005", mitrePhase: "persistence" },
-  { id: "ds-005", file: "windows_soc_data_5_a006.csv", date: "2026-03-27", computers: ["WIN-SOC-PROD-02", "WIN-SOC-PROD-04"], users: ["WIN-SOC\\Dev-01", "WIN-SOC\\User2", "NT AUTHORITY\\SYSTEM"], riskScore: 8100, threatType: "Registry Run Key Modification", mitre: "T1547.001", mitrePhase: "persistence" },
-  { id: "ds-006", file: "windows_soc_data_6_4379.csv", date: "2026-04-01", computers: ["WIN-SOC-PROD-01", "WIN-SOC-PROD-05"], users: ["WIN-SOC\\User1", "WIN-SOC\\SvcDB", "NT AUTHORITY\\SYSTEM"], riskScore: 5500, threatType: "Suspicious Network Exfiltration", mitre: "T1048", mitrePhase: "exfiltration" },
-  { id: "ds-007", file: "windows_soc_data_7_8735.csv", date: "2026-03-26", computers: ["WIN-SOC-PROD-02", "WIN-SOC-PROD-01"], users: ["WIN-SOC\\Dev-01", "WIN-SOC\\Admin", "WIN-SOC\\Guest"], riskScore: 7600, threatType: "WMI Script Execution", mitre: "T1047", mitrePhase: "execution" },
-  { id: "ds-008", file: "windows_soc_data_8_11c5.csv", date: "2026-04-02", computers: ["WIN-SOC-PROD-02", "WIN-SOC-DEV-02"], users: ["WIN-SOC\\Dev-01", "NT AUTHORITY\\SYSTEM", "WIN-SOC\\Analyst"], riskScore: 8900, threatType: "Pass-the-Hash Attack", mitre: "T1550.002", mitrePhase: "defense-evasion" },
-  { id: "ds-009", file: "windows_soc_data_9_c913.csv", date: "2026-04-02", computers: ["WIN-SOC-PROD-02", "WIN-SOC-PROD-01"], users: ["WIN-SOC\\Admin", "WIN-SOC\\User3", "NT AUTHORITY\\SYSTEM"], riskScore: 9400, threatType: "DCSync Active Directory Attack", mitre: "T1003.006", mitrePhase: "credential-access" },
-  { id: "ds-010", file: "windows_soc_data_10_7e32.csv", date: "2026-04-01", computers: ["WIN-SOC-PROD-01", "WIN-SOC-DC-01"], users: ["WIN-SOC\\User1", "WIN-SOC\\SvcMail", "NT AUTHORITY\\SYSTEM"], riskScore: 6200, threatType: "Token Impersonation / Privilege Escalation", mitre: "T1134.001", mitrePhase: "privilege-escalation" },
+  { id: "ds-001", file: "windows_soc_data_1_ee46.csv", date: "2026-04-02", computers: ["WIN-SOC-PROD-01", "WIN-SOC-PROD-02"], users: ["WIN-SOC\\Admin", "WIN-SOC\\User1", "NT AUTHORITY\\SYSTEM"], riskScore: 8750, threatType: "PowerShell Encoded Command Execution", mitre: "T1059.001", mitrePhase: "execution",           totalThreats: 127, totalLogs: 45200 },
+  { id: "ds-002", file: "windows_soc_data_2_5bff.csv", date: "2026-04-01", computers: ["WIN-SOC-PROD-01", "WIN-SOC-DEV-03"], users: ["WIN-SOC\\User1", "NT AUTHORITY\\SYSTEM", "WIN-SOC\\SvcAcct"], riskScore: 7200, threatType: "LSASS Memory Access", mitre: "T1003.001", mitrePhase: "credential-access",   totalThreats: 95,  totalLogs: 38100 },
+  { id: "ds-003", file: "windows_soc_data_3_838b.csv", date: "2026-03-26", computers: ["WIN-SOC-PROD-01", "WIN-SOC-PROD-03"], users: ["WIN-SOC\\Admin", "WIN-SOC\\Dev-01", "WIN-SOC\\Backup"], riskScore: 9100, threatType: "Lateral Movement via SMB", mitre: "T1021.002", mitrePhase: "lateral-movement",   totalThreats: 120, totalLogs: 52700 },
+  { id: "ds-004", file: "windows_soc_data_4_068a.csv", date: "2026-03-29", computers: ["WIN-SOC-PROD-02", "WIN-SOC-DC-01"], users: ["WIN-SOC\\Dev-01", "WIN-SOC\\Admin", "NT AUTHORITY\\NETWORK SERVICE"], riskScore: 6800, threatType: "Scheduled Task Persistence", mitre: "T1053.005", mitrePhase: "persistence",  totalThreats: 140, totalLogs: 41300 },
+  { id: "ds-005", file: "windows_soc_data_5_a006.csv", date: "2026-03-27", computers: ["WIN-SOC-PROD-02", "WIN-SOC-PROD-04"], users: ["WIN-SOC\\Dev-01", "WIN-SOC\\User2", "NT AUTHORITY\\SYSTEM"], riskScore: 8100, threatType: "Registry Run Key Modification", mitre: "T1547.001", mitrePhase: "persistence",  totalThreats: 160, totalLogs: 63900 },
+  { id: "ds-006", file: "windows_soc_data_6_4379.csv", date: "2026-04-01", computers: ["WIN-SOC-PROD-01", "WIN-SOC-PROD-05"], users: ["WIN-SOC\\User1", "WIN-SOC\\SvcDB", "NT AUTHORITY\\SYSTEM"], riskScore: 5500, threatType: "Suspicious Network Exfiltration", mitre: "T1048", mitrePhase: "exfiltration",     totalThreats: 150, totalLogs: 29400 },
+  { id: "ds-007", file: "windows_soc_data_7_8735.csv", date: "2026-03-26", computers: ["WIN-SOC-PROD-02", "WIN-SOC-PROD-01"], users: ["WIN-SOC\\Dev-01", "WIN-SOC\\Admin", "WIN-SOC\\Guest"], riskScore: 7600, threatType: "WMI Script Execution", mitre: "T1047", mitrePhase: "execution",               totalThreats: 180, totalLogs: 57800 },
+  { id: "ds-008", file: "windows_soc_data_8_11c5.csv", date: "2026-04-02", computers: ["WIN-SOC-PROD-02", "WIN-SOC-DEV-02"], users: ["WIN-SOC\\Dev-01", "NT AUTHORITY\\SYSTEM", "WIN-SOC\\Analyst"], riskScore: 8900, threatType: "Pass-the-Hash Attack", mitre: "T1550.002", mitrePhase: "defense-evasion",   totalThreats: 155, totalLogs: 48600 },
+  { id: "ds-009", file: "windows_soc_data_9_c913.csv", date: "2026-04-02", computers: ["WIN-SOC-PROD-02", "WIN-SOC-PROD-01"], users: ["WIN-SOC\\Admin", "WIN-SOC\\User3", "NT AUTHORITY\\SYSTEM"], riskScore: 9400, threatType: "DCSync Active Directory Attack", mitre: "T1003.006", mitrePhase: "credential-access", totalThreats: 200, totalLogs: 71200 },
+  { id: "ds-010", file: "windows_soc_data_10_7e32.csv", date: "2026-04-01", computers: ["WIN-SOC-PROD-01", "WIN-SOC-DC-01"], users: ["WIN-SOC\\User1", "WIN-SOC\\SvcMail", "NT AUTHORITY\\SYSTEM"], riskScore: 6200, threatType: "Token Impersonation / Privilege Escalation", mitre: "T1134.001", mitrePhase: "privilege-escalation", totalThreats: 240, totalLogs: 34500 },
 ]
 
 const EVENT_CATS: Record<string, { title: string; severity: "critical" | "high" | "medium"; mitre: string; mitreId: string; description: string }> = {
@@ -490,11 +490,11 @@ function buildMockDataset(meta: typeof DATASET_META[0]) {
   const analysis: MockAnalysis = {
     scan_id: meta.id,
     file_name: meta.file,
-    total_logs: 10000,
-    total_threats: 30,
+    total_logs: meta.totalLogs,
+    total_threats: meta.totalThreats,
     attack_chain_count: meta.computers.length,
     risk_score: meta.riskScore,
-    threat_density: 0.3,
+    threat_density: Math.round((meta.totalThreats / meta.totalLogs) * 10000) / 100,
     generated_at: new Date(meta.date + "T23:50:00Z").toISOString(),
     status: "completed",
   }

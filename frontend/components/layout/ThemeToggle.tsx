@@ -4,7 +4,7 @@ import { Sun, Moon } from "lucide-react"
 import { useTheme } from "./ThemeContext"
 import { cn } from "@/lib/utils"
 
-export default function ThemeToggle() {
+const ThemeToggle = React.memo(function ThemeToggle() {
   const { theme, toggleTheme } = useTheme()
 
   return (
@@ -18,7 +18,6 @@ export default function ThemeToggle() {
       aria-label="Toggle theme"
     >
       <motion.div
-        layout
         transition={{ type: "spring", stiffness: 500, damping: 30 }}
         className={cn(
           "absolute w-5 h-5 flex items-center justify-center",
@@ -36,4 +35,7 @@ export default function ThemeToggle() {
       </motion.div>
     </button>
   )
-}
+})
+
+export default ThemeToggle
+

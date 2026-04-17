@@ -57,16 +57,19 @@ function makeClientId() {
 
 export function createChatSyncClient(handlers: SyncHandlers) {
   const clientId = makeClientId()
-  const relayUrl = resolveRelayUrl()
+  // Only connect to a relay if explicitly configured via env var
+  const relayUrl = (typeof process !== "undefined" && process.env.NEXT_PUBLIC_CHAT_RELAY_URL) || null
+  const useRelay = !!relayUrl
   let socket: WebSocket | null = null
   let channel: BroadcastChannel | null = null
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null
+  let reconnectAttempts = 0
   let disposed = false
   let initialized = false
   let lastAppliedPayload: string | null = null
 
   const emitRaw = (raw: string) => {
-    console.log('[chatSync] emit raw', raw.slice(0, 120))
+    // console.log('[chatSync] emit raw', raw.slice(0, 120))
     try {
       channel?.postMessage(raw)
     } catch {
@@ -129,7 +132,7 @@ export function createChatSyncClient(handlers: SyncHandlers) {
   }
 
   const connectSocket = () => {
-    if (typeof window === "undefined" || disposed) return
+    if (typeof window === "undefined" || disposed || !useRelay || !relayUrl) return
 
     if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
       return
@@ -156,10 +159,11 @@ export function createChatSyncClient(handlers: SyncHandlers) {
         }, 1000)
       }
       socket.onclose = () => {
-        handlers.onStatus?.("Relay disconnected. Retrying...")
-        if (!disposed) {
-          reconnectTimer = setTimeout(connectSocket, 2000)
-        }
+        if (disposed) return
+        reconnectAttempts++
+        const delayMs = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000) // max 30s
+        handlers.onStatus?.(`Relay disconnected. Retrying in ${Math.round(delayMs/1000)}s...`)
+        reconnectTimer = setTimeout(connectSocket, delayMs)
       }
       socket.onerror = () => {
         handlers.onStatus?.("Relay unavailable. Retrying...")

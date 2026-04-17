@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next"
-import { supabaseAdmin } from "@/lib/supabase"
+import { supabaseAdmin, isSupabaseConfigured } from "@/lib/supabase"
 
 const DEFAULT_USERS = [
   { id: "u-admin", name: "Security Admin", color: "bg-violet-500/30 text-violet-300", metadata: {} },
@@ -82,7 +82,11 @@ async function ensureSeedState() {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === "GET") {
+    if (!isSupabaseConfigured) {
+      return res.status(503).json({ error: "Supabase unconfigured, falling back to local state." })
+    }
     await ensureSeedState()
+
 
     const [{ data: users, error: usersError }, { data: groups, error: groupsError }, { data: messages, error: messagesError }] =
       await Promise.all([
@@ -106,6 +110,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   if (req.method === "POST") {
+    if (!isSupabaseConfigured) {
+      return res.status(200).json({ message: "State saved locally (Mock Mode)" })
+    }
     const state = req.body as {
       users?: Record<string, any>[]
       groups?: Record<string, any>[]

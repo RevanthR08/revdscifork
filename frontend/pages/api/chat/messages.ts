@@ -1,6 +1,6 @@
-import type { NextApiRequest, NextApiResponse } from "next"
 import type { ChatMessage } from "@/lib/secureChatStore"
-import { supabaseAdmin } from "@/lib/supabase"
+import type { NextApiRequest, NextApiResponse } from "next"
+import { supabaseAdmin, isSupabaseConfigured } from "@/lib/supabase"
 
 function camelize(str: string) {
   return str.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase())
@@ -44,6 +44,9 @@ function snakeCaseObject<T = Record<string, any>>(value: unknown): T {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === "GET") {
+    if (!isSupabaseConfigured) {
+      return res.status(200).json({ messages: [], mockMode: true })
+    }
     const groupId = req.query.groupId as string | undefined
     let query = supabaseAdmin.from("chat_messages").select("*").order("sent_at", { ascending: true })
     if (groupId) {
@@ -59,6 +62,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   if (req.method === "POST") {
+    if (!isSupabaseConfigured) {
+      return res.status(201).json({ message: "ok (Mock Mode)" })
+    }
     const message = req.body.message as ChatMessage | undefined
     if (!message || !message.id) {
       return res.status(400).json({ error: "Invalid message payload" })

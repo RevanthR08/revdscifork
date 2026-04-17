@@ -64,25 +64,40 @@ function resolveScanId(scanId: string) {
   return FALLBACK_SCAN_ID
 }
 
-// Tracks which scan IDs have already been fully loaded this session.
-// Once a scan is in this set, all subsequent API calls for it return instantly
-// so navigating between Overview / AI Summary / Attack Chains never re-triggers the loading animation.
-const loadedScanCache = new Set<string>()
-
-async function delayForDataset(scanId: string, _multiplier = 1) {
-  const resolvedScanId = resolveScanId(scanId)
-  // Skip delay on subsequent visits to the same scan — instant navigation
-  if (loadedScanCache.has(resolvedScanId)) {
-    await delay(50)
-    return
-  }
-  // First load: fixed 3-second delay to simulate AI scanning
-  await delay(3000)
+// Tracks which features have already been fully loaded for each scan ID in this session.
+const cache = {
+  analysis: new Set<string>(),
+  findings: new Set<string>(),
+  chains:   new Set<string>(),
+  summary:  new Set<string>(),
 }
 
-// Mark a scan as fully loaded so future calls skip the delay
-function markScanLoaded(scanId: string) {
-  loadedScanCache.add(resolveScanId(scanId))
+/**
+ * Returns a random delay between min and max seconds.
+ */
+function getRandomDelay(min: number, max: number) {
+  return Math.floor(Math.random() * (max - min + 1) + min) * 1000
+}
+
+/**
+ * Handles simulated latency based on feature type and first-time access.
+ */
+async function simulateLatency(scanId: string, feature: keyof typeof cache, min: number, max: number, silent = false) {
+  const resolvedId = resolveScanId(scanId)
+  
+  if (silent) {
+    await delay(100)
+    return
+  }
+
+  if (cache[feature].has(resolvedId)) {
+    await delay(100)
+    return
+  }
+  
+  const ms = getRandomDelay(min, max)
+  await delay(ms)
+  cache[feature].add(resolvedId)
 }
 
 /**
@@ -96,13 +111,11 @@ export async function listScans(_limit = 20, _offset = 0) {
 /**
  * GET a single analysis by ID (previously: GET /scans/{id})
  */
-export async function getScan(id: string) {
+export async function getScan(id: string, silent = false) {
   const resolvedId = resolveScanId(id)
-  await delayForDataset(resolvedId, 1)
+  await simulateLatency(resolvedId, "analysis", 4, 8, silent)
   const analysis = getMockAnalysis(resolvedId)
   if (!analysis) throw new Error(`Analysis ${id} not found`)
-  // Mark this scan as loaded — all further calls for this ID will be instant
-  markScanLoaded(resolvedId)
   return analysis
 }
 
@@ -111,7 +124,8 @@ export async function getScan(id: string) {
  */
 export async function getScanEvents(id: string, params: { limit?: number; offset?: number; category?: string } = {}) {
   const resolvedId = resolveScanId(id)
-  await delayForDataset(resolvedId, 0.85)
+  // Events are usually loaded with the main analysis or summary, keeping it light
+  await delay(200)
   const allEvents = getMockEvents(resolvedId)
   const limited = allEvents.slice(params.offset || 0, (params.offset || 0) + (params.limit || allEvents.length))
   return { events: limited }
@@ -122,37 +136,34 @@ export async function getScanEvents(id: string, params: { limit?: number; offset
  */
 export async function getScanCategories(id: string) {
   const resolvedId = resolveScanId(id)
-  await delayForDataset(resolvedId, 0.35)
+  await delay(100)
   return { categories: getMockCategories(resolvedId) }
 }
 
 /**
  * GET findings for a scan (previously: GET /scans/{id}/findings)
  */
-export async function getScanFindings(id: string) {
+export async function getScanFindings(id: string, silent = false) {
   const resolvedId = resolveScanId(id)
-  await delayForDataset(resolvedId, 0.7)
-  markScanLoaded(resolvedId)
+  await simulateLatency(resolvedId, "findings", 3, 5, silent)
   return { findings: getMockFindings(resolvedId) }
 }
 
 /**
  * GET attack chains (previously: GET /scans/{id}/chains)
  */
-export async function getScanChains(id: string) {
+export async function getScanChains(id: string, silent = false) {
   const resolvedId = resolveScanId(id)
-  await delayForDataset(resolvedId, 0.45)
-  markScanLoaded(resolvedId)
+  await simulateLatency(resolvedId, "chains", 2, 4, silent)
   return { chains: getMockChains(resolvedId) }
 }
 
 /**
  * GET AI summary (previously: GET /scans/{id}/summary)
  */
-export async function getScanSummary(id: string) {
+export async function getScanSummary(id: string, silent = false) {
   const resolvedId = resolveScanId(id)
-  await delayForDataset(resolvedId, 1.15) // Slightly longer to simulate AI generation
-  markScanLoaded(resolvedId)
+  await simulateLatency(resolvedId, "summary", 10, 15, silent)
   const summary = getMockSummary(resolvedId)
   if (!summary) throw new Error(`Summary for ${id} not found`)
   return summary
@@ -197,7 +208,9 @@ export function connectSystemStatsWebSocket(_onMessage: (data: any) => void) {
 }
 
 // travels stub for any pages that reference it
-export async function getScanTravels(_id: string) {
+export async function getScanTravels(id: string, silent = false) {
+  const resolvedId = resolveScanId(id)
   await delay()
   return { travels: [] }
 }
+

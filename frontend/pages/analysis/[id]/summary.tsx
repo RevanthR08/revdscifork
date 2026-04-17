@@ -12,6 +12,7 @@ import SummaryPageSkeleton from "@/components/dashboard/SummarySkeleton"
 import { getScan, getScanSummary, getScanFindings, getScanChains } from "@/lib/api"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
+import { cn } from "@/lib/utils"
 
 interface Summary {
   scan_id: string
@@ -73,6 +74,8 @@ export default function SummaryPage() {
   const [copied, setCopied] = useState(false)
   const [expandedReport, setExpandedReport] = useState(true)
   const [expandedRemediation, setExpandedRemediation] = useState(false)
+  const [displayedContent, setDisplayedContent] = useState("")
+  const [isTyping, setIsTyping] = useState(false)
 
   useEffect(() => {
     if (id) loadData()
@@ -84,10 +87,10 @@ export default function SummaryPage() {
     try {
       const scanId = id as string
       const [analysisData, summaryData, findingsData, chainsData] = await Promise.all([
-        getScan(scanId),
-        getScanSummary(scanId).catch(() => null),
-        getScanFindings(scanId),
-        getScanChains(scanId),
+        getScan(scanId, true),
+        getScanSummary(scanId),
+        getScanFindings(scanId, true),
+        getScanChains(scanId, true),
       ])
       
       setAnalysis(analysisData)
@@ -104,6 +107,7 @@ export default function SummaryPage() {
           }
         })
       }
+
 
       // Map mock findings
       setFindings((findingsData.findings || []).map((f: any) => ({
@@ -137,6 +141,29 @@ export default function SummaryPage() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    if (summary?.content_markdown) {
+      const fullText = summary.content_markdown
+      setDisplayedContent("")
+      setIsTyping(true)
+
+      const words = fullText.split(" ")
+      let currentIdx = 0
+      
+      const timer = setInterval(() => {
+        if (currentIdx < words.length) {
+          setDisplayedContent(prev => prev + (prev ? " " : "") + words[currentIdx])
+          currentIdx++
+        } else {
+          setIsTyping(false)
+          clearInterval(timer)
+        }
+      }, 25)
+
+      return () => clearInterval(timer)
+    }
+  }, [summary?.content_markdown])
 
   const generateSummary = async () => {
     setGenerating(true)
@@ -213,21 +240,7 @@ export default function SummaryPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={generateSummary}
-              disabled={generating}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors"
-              style={{
-                borderRadius: "6px",
-                backgroundColor: generating ? "#27272a" : "#6C5DD3",
-                color: "#ffffff",
-                cursor: generating ? "not-allowed" : "pointer",
-              }}
-            >
-              {generating ? <><Loader2 className="w-4 h-4 animate-spin" />Generating...</> : <><RefreshCw className="w-4 h-4" />{summary ? "Regenerate" : "Generate"}</>}
-            </button>
-          </div>
+
         </motion.div>
 
         {/* Pipeline Flow */}
@@ -256,14 +269,6 @@ export default function SummaryPage() {
               <FileText className="w-7 h-7 text-zinc-500" />
             </div>
             <h3 className="text-base font-semibold text-white mb-2">No Summary Generated</h3>
-            <p className="text-xs text-zinc-400 mb-4">Generate an AI-powered summary of the security analysis</p>
-            <button
-              onClick={generateSummary}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white transition-colors"
-              style={{ backgroundColor: "#6C5DD3", borderRadius: "6px" }}
-            >
-              <Sparkles className="w-4 h-4" />Generate Summary
-            </button>
           </motion.div>
         ) : summary ? (
           <>
@@ -332,15 +337,15 @@ export default function SummaryPage() {
                       {expandedReport ? <ChevronUp className="w-4 h-4 text-zinc-500" /> : <ChevronDown className="w-4 h-4 text-zinc-500" />}
                     </div>
                   </div>
-                  <AnimatePresence>
-                    {expandedReport && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="overflow-hidden"
-                      >
+                    <AnimatePresence>
+                      {expandedReport && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="overflow-hidden"
+                        >
                         <div className="px-6 pb-6 border-t border-zinc-800 pt-6">
                           <div className="prose prose-sm prose-invert max-w-none">
                             <ReactMarkdown 
@@ -371,8 +376,12 @@ export default function SummaryPage() {
                                 strong: ({node, ...props}) => <strong className="text-white font-bold" {...props} />,
                               }}
                             >
-                              {summary.content_markdown}
+                              {displayedContent}
                             </ReactMarkdown>
+                            {isTyping && (
+                              <span className="inline-block w-2 h-4 bg-violet-500 animate-pulse ml-1 align-middle" />
+                            )}
+
                           </div>
                         </div>
                       </motion.div>

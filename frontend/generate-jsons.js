@@ -2,16 +2,16 @@ const fs = require('fs');
 const path = require('path');
 
 const DATASET_META = [
-  { id: "ds-001", file: "windows_soc_data_1_ee46.csv", riskScore: 8750, threatType: "PowerShell Encoded Command Execution", mitre: "T1059.001" },
-  { id: "ds-002", file: "windows_soc_data_2_5bff.csv", riskScore: 7200, threatType: "LSASS Memory Access", mitre: "T1003.001" },
-  { id: "ds-003", file: "windows_soc_data_3_838b.csv", riskScore: 9100, threatType: "Lateral Movement via SMB", mitre: "T1021.002" },
-  { id: "ds-004", file: "windows_soc_data_4_068a.csv", riskScore: 6800, threatType: "Scheduled Task Persistence", mitre: "T1053.005" },
-  { id: "ds-005", file: "windows_soc_data_5_a006.csv", riskScore: 8100, threatType: "Registry Run Key Modification", mitre: "T1547.001" },
-  { id: "ds-006", file: "windows_soc_data_6_4379.csv", riskScore: 5500, threatType: "Suspicious Network Exfiltration", mitre: "T1048" },
-  { id: "ds-007", file: "windows_soc_data_7_8735.csv", riskScore: 7600, threatType: "WMI Script Execution", mitre: "T1047" },
-  { id: "ds-008", file: "windows_soc_data_8_11c5.csv", riskScore: 8900, threatType: "Pass-the-Hash Attack", mitre: "T1550.002" },
-  { id: "ds-009", file: "windows_soc_data_9_c913.csv", riskScore: 9400, threatType: "DCSync Active Directory Attack", mitre: "T1003.006" },
-  { id: "ds-010", file: "windows_soc_data_10_7e32.csv", riskScore: 6200, threatType: "Token Impersonation", mitre: "T1134.001" },
+  { id: "ds-001", file: "windows_soc_data_1_ee46.csv", riskScore: 8750, threatType: "PowerShell Encoded Command Execution", mitre: "T1059.001", chainCount: 6 },
+  { id: "ds-002", file: "windows_soc_data_2_5bff.csv", riskScore: 7200, threatType: "LSASS Memory Access", mitre: "T1003.001", chainCount: 4 },
+  { id: "ds-003", file: "windows_soc_data_3_838b.csv", riskScore: 9100, threatType: "Lateral Movement via SMB", mitre: "T1021.002", chainCount: 8 },
+  { id: "ds-004", file: "windows_soc_data_4_068a.csv", riskScore: 6800, threatType: "Scheduled Task Persistence", mitre: "T1053.005", chainCount: 5 },
+  { id: "ds-005", file: "windows_soc_data_5_a006.csv", riskScore: 8100, threatType: "Registry Run Key Modification", mitre: "T1547.001", chainCount: 7 },
+  { id: "ds-006", file: "windows_soc_data_6_4379.csv", riskScore: 5500, threatType: "Suspicious Network Exfiltration", mitre: "T1048", chainCount: 5 },
+  { id: "ds-007", file: "windows_soc_data_7_8735.csv", riskScore: 7600, threatType: "WMI Script Execution", mitre: "T1047", chainCount: 9 },
+  { id: "ds-008", file: "windows_soc_data_8_11c5.csv", riskScore: 8900, threatType: "Pass-the-Hash Attack", mitre: "T1550.002", chainCount: 6 },
+  { id: "ds-009", file: "windows_soc_data_9_c913.csv", riskScore: 9400, threatType: "DCSync Active Directory Attack", mitre: "T1003.006", chainCount: 10 },
+  { id: "ds-010", file: "windows_soc_data_10_7e32.csv", riskScore: 6200, threatType: "Token Impersonation", mitre: "T1134.001", chainCount: 12 },
 ];
 
 const EVENT_CATS = {
@@ -74,7 +74,7 @@ function generateFiles() {
 | Risk Level | ${riskLevel} (${riskPct}%) |
 | Total Logs | ${(lines.length - 1).toLocaleString()} |
 | Threat Events | ${attackedLogs.length} |
-| Attack Chains | ${affectedHosts.length} |
+| Attack Chains | ${meta.chainCount} |
 | Affected Hosts | ${affectedHosts.length} |
 | Affected Users | ${affectedUsers.length} |
 

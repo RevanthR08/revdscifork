@@ -118,17 +118,20 @@ export interface MockSummary {
 // ─── DATASET METADATA ────────────────────────────────────────────────────────
 
 const DATASET_META = [
-  { id: "ds-001", file: "windows_soc_data_1_ee46.csv", date: "2026-04-02", computers: ["WIN-SOC-PROD-01", "WIN-SOC-PROD-02"], users: ["WIN-SOC\\Admin", "WIN-SOC\\User1", "NT AUTHORITY\\SYSTEM"], riskScore: 8750, threatType: "PowerShell Encoded Command Execution", mitre: "T1059.001", mitrePhase: "execution",           totalThreats: 127, totalLogs: 45200 },
-  { id: "ds-002", file: "windows_soc_data_2_5bff.csv", date: "2026-04-01", computers: ["WIN-SOC-PROD-01", "WIN-SOC-DEV-03"], users: ["WIN-SOC\\User1", "NT AUTHORITY\\SYSTEM", "WIN-SOC\\SvcAcct"], riskScore: 7200, threatType: "LSASS Memory Access", mitre: "T1003.001", mitrePhase: "credential-access",   totalThreats: 95,  totalLogs: 38100 },
-  { id: "ds-003", file: "windows_soc_data_3_838b.csv", date: "2026-03-26", computers: ["WIN-SOC-PROD-01", "WIN-SOC-PROD-03"], users: ["WIN-SOC\\Admin", "WIN-SOC\\Dev-01", "WIN-SOC\\Backup"], riskScore: 9100, threatType: "Lateral Movement via SMB", mitre: "T1021.002", mitrePhase: "lateral-movement",   totalThreats: 120, totalLogs: 52700 },
-  { id: "ds-004", file: "windows_soc_data_4_068a.csv", date: "2026-03-29", computers: ["WIN-SOC-PROD-02", "WIN-SOC-DC-01"], users: ["WIN-SOC\\Dev-01", "WIN-SOC\\Admin", "NT AUTHORITY\\NETWORK SERVICE"], riskScore: 6800, threatType: "Scheduled Task Persistence", mitre: "T1053.005", mitrePhase: "persistence",  totalThreats: 140, totalLogs: 41300 },
-  { id: "ds-005", file: "windows_soc_data_5_a006.csv", date: "2026-03-27", computers: ["WIN-SOC-PROD-02", "WIN-SOC-PROD-04"], users: ["WIN-SOC\\Dev-01", "WIN-SOC\\User2", "NT AUTHORITY\\SYSTEM"], riskScore: 8100, threatType: "Registry Run Key Modification", mitre: "T1547.001", mitrePhase: "persistence",  totalThreats: 160, totalLogs: 63900 },
-  { id: "ds-006", file: "windows_soc_data_6_4379.csv", date: "2026-04-01", computers: ["WIN-SOC-PROD-01", "WIN-SOC-PROD-05"], users: ["WIN-SOC\\User1", "WIN-SOC\\SvcDB", "NT AUTHORITY\\SYSTEM"], riskScore: 5500, threatType: "Suspicious Network Exfiltration", mitre: "T1048", mitrePhase: "exfiltration",     totalThreats: 150, totalLogs: 29400 },
-  { id: "ds-007", file: "windows_soc_data_7_8735.csv", date: "2026-03-26", computers: ["WIN-SOC-PROD-02", "WIN-SOC-PROD-01"], users: ["WIN-SOC\\Dev-01", "WIN-SOC\\Admin", "WIN-SOC\\Guest"], riskScore: 7600, threatType: "WMI Script Execution", mitre: "T1047", mitrePhase: "execution",               totalThreats: 180, totalLogs: 57800 },
-  { id: "ds-008", file: "windows_soc_data_8_11c5.csv", date: "2026-04-02", computers: ["WIN-SOC-PROD-02", "WIN-SOC-DEV-02"], users: ["WIN-SOC\\Dev-01", "NT AUTHORITY\\SYSTEM", "WIN-SOC\\Analyst"], riskScore: 8900, threatType: "Pass-the-Hash Attack", mitre: "T1550.002", mitrePhase: "defense-evasion",   totalThreats: 155, totalLogs: 48600 },
-  { id: "ds-009", file: "windows_soc_data_9_c913.csv", date: "2026-04-02", computers: ["WIN-SOC-PROD-02", "WIN-SOC-PROD-01"], users: ["WIN-SOC\\Admin", "WIN-SOC\\User3", "NT AUTHORITY\\SYSTEM"], riskScore: 9400, threatType: "DCSync Active Directory Attack", mitre: "T1003.006", mitrePhase: "credential-access", totalThreats: 200, totalLogs: 71200 },
-  { id: "ds-010", file: "windows_soc_data_10_7e32.csv", date: "2026-04-01", computers: ["WIN-SOC-PROD-01", "WIN-SOC-DC-01"], users: ["WIN-SOC\\User1", "WIN-SOC\\SvcMail", "NT AUTHORITY\\SYSTEM"], riskScore: 6200, threatType: "Token Impersonation / Privilege Escalation", mitre: "T1134.001", mitrePhase: "privilege-escalation", totalThreats: 240, totalLogs: 34500 },
+  { id: "ds-001", file: "windows_soc_data_1_ee46.csv", date: "2026-04-02", computers: ["WIN-SOC-PROD-01", "WIN-SOC-PROD-02", "WIN-SOC-PROD-03", "WIN-SOC-DC-01", "WIN-SOC-FILESVR", "WIN-SOC-WS-12", "WIN-SOC-WS-15", "WIN-SOC-SRV-10", "WIN-SOC-SRV-11", "WIN-SOC-SRV-12"], users: ["WIN-SOC\\Admin", "WIN-SOC\\User1", "NT AUTHORITY\\SYSTEM"], riskScore: 8750, threatType: "PowerShell Encoded Command Execution", mitre: "T1059.001", mitrePhase: "execution",           totalThreats: 127, totalLogs: 45200, chainCount: 6 },
+  { id: "ds-002", file: "windows_soc_data_2_5bff.csv", date: "2026-04-01", computers: ["WIN-SOC-PROD-01", "WIN-SOC-DEV-03", "WIN-SOC-DEV-04", "WIN-SOC-SRV-01", "WIN-SOC-WS-22", "WIN-SOC-WS-23", "WIN-SOC-WS-24", "WIN-SOC-WS-25", "WIN-SOC-WS-26", "WIN-SOC-SRV-09"], users: ["WIN-SOC\\User1", "NT AUTHORITY\\SYSTEM", "WIN-SOC\\SvcAcct"], riskScore: 7200, threatType: "LSASS Memory Access", mitre: "T1003.001", mitrePhase: "credential-access",   totalThreats: 95,  totalLogs: 38100, chainCount: 4 },
+  { id: "ds-003", file: "windows_soc_data_3_838b.csv", date: "2026-03-26", computers: ["WIN-SOC-PROD-01", "WIN-SOC-PROD-03", "WIN-SOC-PROD-05", "WIN-SOC-PROD-07", "WIN-SOC-WS-09", "WIN-SOC-WS-10", "WIN-SOC-WS-11", "WIN-SOC-SRV-02", "WIN-SOC-SRV-03", "WIN-SOC-SRV-04", "WIN-SOC-SRV-05", "WIN-SOC-SRV-06"], users: ["WIN-SOC\\Admin", "WIN-SOC\\Dev-01", "WIN-SOC\\Backup"], riskScore: 9100, threatType: "Lateral Movement via SMB", mitre: "T1021.002", mitrePhase: "lateral-movement",   totalThreats: 120, totalLogs: 52700, chainCount: 8 },
+  { id: "ds-004", file: "windows_soc_data_4_068a.csv", date: "2026-03-29", computers: ["WIN-SOC-PROD-02", "WIN-SOC-DC-01", "WIN-SOC-DC-02", "WIN-SOC-EXCH-01", "WIN-SOC-WS-31", "WIN-SOC-WS-32", "WIN-SOC-WS-33", "WIN-SOC-WS-34", "WIN-SOC-SRV-07", "WIN-SOC-SRV-08"], users: ["WIN-SOC\\Dev-01", "WIN-SOC\\Admin", "NT AUTHORITY\\NETWORK SERVICE"], riskScore: 6800, threatType: "Scheduled Task Persistence", mitre: "T1053.005", mitrePhase: "persistence",  totalThreats: 140, totalLogs: 41300, chainCount: 5 },
+  { id: "ds-005", file: "windows_soc_data_5_a006.csv", date: "2026-03-27", computers: ["WIN-SOC-PROD-02", "WIN-SOC-PROD-04", "WIN-SOC-PROD-06", "WIN-SOC-SRV-05", "WIN-SOC-WS-44", "WIN-SOC-WS-45", "WIN-SOC-WS-46", "WIN-SOC-WS-47", "WIN-SOC-WS-48", "WIN-SOC-SRV-20", "WIN-SOC-SRV-21", "WIN-SOC-SRV-22"], users: ["WIN-SOC\\Dev-01", "WIN-SOC\\User2", "NT AUTHORITY\\SYSTEM"], riskScore: 8100, threatType: "Registry Run Key Modification", mitre: "T1547.001", mitrePhase: "persistence",  totalThreats: 160, totalLogs: 63900, chainCount: 7 },
+  { id: "ds-006", file: "windows_soc_data_6_4379.csv", date: "2026-04-01", computers: ["WIN-SOC-PROD-01", "WIN-SOC-PROD-05", "WIN-SOC-PROD-08", "WIN-SOC-SQL-01", "WIN-SOC-WS-55", "WIN-SOC-WS-56", "WIN-SOC-WS-57", "WIN-SOC-WS-58", "WIN-SOC-SRV-30", "WIN-SOC-SRV-31"], users: ["WIN-SOC\\User1", "WIN-SOC\\SvcDB", "NT AUTHORITY\\SYSTEM"], riskScore: 5500, threatType: "Suspicious Network Exfiltration", mitre: "T1048", mitrePhase: "exfiltration",     totalThreats: 150, totalLogs: 29400, chainCount: 5 },
+  { id: "ds-007", file: "windows_soc_data_7_8735.csv", date: "2026-03-26", computers: ["WIN-SOC-PROD-02", "WIN-SOC-PROD-01", "WIN-SOC-DC-01", "WIN-SOC-WS-61", "WIN-SOC-WS-62", "WIN-SOC-WS-63", "WIN-SOC-WS-64", "WIN-SOC-WS-65", "WIN-SOC-SRV-40", "WIN-SOC-SRV-41", "WIN-SOC-SRV-42", "WIN-SOC-SRV-43", "WIN-SOC-SRV-44", "WIN-SOC-SRV-45"], users: ["WIN-SOC\\Dev-01", "WIN-SOC\\Admin", "WIN-SOC\\Guest"], riskScore: 7600, threatType: "WMI Script Execution", mitre: "T1047", mitrePhase: "execution",               totalThreats: 180, totalLogs: 57800, chainCount: 9 },
+  { id: "ds-008", file: "windows_soc_data_8_11c5.csv", date: "2026-04-02", computers: ["WIN-SOC-PROD-02", "WIN-SOC-DEV-02", "WIN-SOC-DEV-05", "WIN-SOC-WS-77", "WIN-SOC-WS-78", "WIN-SOC-WS-79", "WIN-SOC-WS-80", "WIN-SOC-WS-81", "WIN-SOC-SRV-50", "WIN-SOC-SRV-51"], users: ["WIN-SOC\\Dev-01", "NT AUTHORITY\\SYSTEM", "WIN-SOC\\SvcMail"], riskScore: 8900, threatType: "Pass-the-Hash Attack", mitre: "T1550.002", mitrePhase: "defense-evasion",   totalThreats: 155, totalLogs: 48600, chainCount: 6 },
+  { id: "ds-009", file: "windows_soc_data_9_c913.csv", date: "2026-04-02", computers: ["WIN-SOC-PROD-02", "WIN-SOC-PROD-01", "WIN-SOC-DC-01", "WIN-SOC-DC-02", "WIN-SOC-FILESVR-02", "WIN-SOC-WS-88", "WIN-SOC-WS-89", "WIN-SOC-WS-90", "WIN-SOC-WS-91", "WIN-SOC-WS-92", "WIN-SOC-SRV-60", "WIN-SOC-SRV-61", "WIN-SOC-SRV-62"], users: ["WIN-SOC\\Admin", "WIN-SOC\\User3", "NT AUTHORITY\\SYSTEM"], riskScore: 9400, threatType: "DCSync Active Directory Attack", mitre: "T1003.006", mitrePhase: "credential-access", totalThreats: 200, totalLogs: 71200, chainCount: 10 },
+  { id: "ds-010", file: "windows_soc_data_10_7e32.csv", date: "2026-04-01", computers: ["WIN-SOC-PROD-01", "WIN-SOC-DC-01", "WIN-SOC-EXCH-02", "WIN-SOC-WS-01", "WIN-SOC-WS-02", "WIN-SOC-WS-03", "WIN-SOC-WS-04", "WIN-SOC-WS-05", "WIN-SOC-SRV-70", "WIN-SOC-SRV-71", "WIN-SOC-SRV-72", "WIN-SOC-SRV-73", "WIN-SOC-SRV-74", "WIN-SOC-SRV-75", "WIN-SOC-SRV-76"], users: ["WIN-SOC\\User1", "WIN-SOC\\SvcMail", "NT AUTHORITY\\SYSTEM"], riskScore: 6200, threatType: "Token Impersonation / Privilege Escalation", mitre: "T1134.001", mitrePhase: "privilege-escalation", totalThreats: 240, totalLogs: 34500, chainCount: 12 },
 ]
+
+
+
 
 const EVENT_CATS: Record<string, { title: string; severity: "critical" | "high" | "medium"; mitre: string; mitreId: string; description: string }> = {
   "T1059.001": { title: "PowerShell Encoded Command Execution", severity: "critical", mitre: "T1059.001", mitreId: "Execution", description: "Attacker executed encoded PowerShell commands (IEX Download Cradle) to bypass logging and download additional payloads from a remote C2 server." },
@@ -144,17 +147,18 @@ const EVENT_CATS: Record<string, { title: string; severity: "critical" | "high" 
 }
 
 const KILL_CHAIN_PHASES: Record<string, string[]> = {
-  "T1059.001": ["reconnaissance", "execution", "command-and-control"],
-  "T1003.001": ["credential-access", "defense-evasion"],
-  "T1021.002": ["lateral-movement", "collection"],
-  "T1053.005": ["persistence", "privilege-escalation"],
-  "T1547.001": ["persistence", "privilege-escalation"],
-  "T1048":     ["collection", "exfiltration"],
-  "T1047":     ["execution", "lateral-movement"],
-  "T1550.002": ["defense-evasion", "lateral-movement", "credential-access"],
-  "T1003.006": ["credential-access", "collection"],
-  "T1134.001": ["privilege-escalation", "defense-evasion"],
+  "T1059.001": ["reconnaissance", "resource-development", "initial-access", "execution", "persistence", "command-and-control"],
+  "T1003.001": ["initial-access", "execution", "credential-access", "defense-evasion", "lateral-movement"],
+  "T1021.002": ["initial-access", "execution", "lateral-movement", "collection", "exfiltration"],
+  "T1053.005": ["execution", "persistence", "privilege-escalation", "defense-evasion", "collection"],
+  "T1547.001": ["initial-access", "execution", "persistence", "privilege-escalation", "defense-evasion"],
+  "T1048":     ["initial-access", "execution", "persistence", "collection", "exfiltration", "impact"],
+  "T1047":     ["reconnaissance", "execution", "lateral-movement", "collection", "command-and-control"],
+  "T1550.002": ["initial-access", "defense-evasion", "lateral-movement", "credential-access", "exfiltration"],
+  "T1003.006": ["credential-access", "lateral-movement", "collection", "exfiltration", "impact"],
+  "T1134.001": ["initial-access", "execution", "privilege-escalation", "defense-evasion", "persistence"],
 }
+
 
 // ─── GENERATORS ──────────────────────────────────────────────────────────────
 
@@ -331,21 +335,52 @@ function genFindings(meta: typeof DATASET_META[0], events: MockEvent[]): MockFin
 
 
 function genChains(meta: typeof DATASET_META[0], events: MockEvent[]): MockChain[] {
-  const phases = KILL_CHAIN_PHASES[meta.mitre] || ["execution"]
+  const basePhases = KILL_CHAIN_PHASES[meta.mitre] || ["execution"]
   const hosts = meta.computers
+  const chainCount = meta.chainCount || hosts.length
+  const chains: MockChain[] = []
 
-  return hosts.map((host, i) => ({
-    chain_id: `chain-${meta.id}-${String(i + 1).padStart(2, "0")}`,
-    chain_index: i + 1,
-    title: `${meta.threatType} on ${host}`,
-    computer: host,
-    chain_confidence: 0.85 + i * 0.05,
-    kill_chain_phases: phases,
-    affected_users: meta.users.filter((_, j) => j !== i),
-    affected_hosts: [host],
-    events: events.filter(e => e.computer === host).map(e => e.event_id),
-  }))
+  const chainTypes = [
+    "Initial Access & Reconnaissance",
+    "Persistence Establishment",
+    "Lateral Movement & Discovery",
+    "Credential Harvesting Campaign",
+    "Data Collection & Staging",
+    "Exfiltration & Impact Execution",
+    "Anomaly & Behavioral Deviation",
+    "Suspicious Process Execution",
+  ]
+
+  for (let i = 0; i < chainCount; i++) {
+    // Pick a primary host and 1-2 secondary hosts for lateral movement chains
+    const primaryHost = hosts[i % hosts.length]
+    const secondaryHosts = hosts.filter((h, idx) => idx !== (i % hosts.length) && (idx + i) % 3 === 0).slice(0, 2)
+    const affectedHosts = [primaryHost, ...secondaryHosts]
+    
+    // Pick random subset of users
+    const affectedUsers = meta.users.filter((_, idx) => (idx + i) % 2 === 0 || idx === (i % meta.users.length))
+    
+    // Slice phases to show different stages of completion
+    const phaseSliceIndex = Math.max(2, (i % basePhases.length) + 1)
+    const currentPhases = basePhases.slice(0, phaseSliceIndex)
+    
+    const type = chainTypes[i % chainTypes.length]
+    
+    chains.push({
+      chain_id: `chain-${meta.id}-${String(i + 1).padStart(2, "0")}`,
+      chain_index: i + 1,
+      title: `${type} [ID: ${Math.floor(Math.random() * 9000) + 1000}]`,
+      computer: primaryHost,
+      chain_confidence: 0.75 + (Math.random() * 0.2),
+      kill_chain_phases: currentPhases,
+      affected_users: affectedUsers,
+      affected_hosts: affectedHosts,
+      events: events.filter(e => affectedHosts.includes(e.computer)).map(e => e.event_id).slice(0, 5 + (i % 5)),
+    })
+  }
+  return chains
 }
+
 
 function genSummary(meta: typeof DATASET_META[0], analysis: MockAnalysis, findings: MockFinding[], chains: MockChain[]): MockSummary {
   const cat = EVENT_CATS[meta.mitre]
@@ -356,7 +391,7 @@ function genSummary(meta: typeof DATASET_META[0], analysis: MockAnalysis, findin
 
   const execSummary = `A ${threatLevel}-severity threat campaign was detected in dataset ${meta.file}. Analysis identified ${analysis.total_threats} suspicious events across ${affectedHosts.length} hosts, with a risk score of ${riskPct}%. The primary attack vector is **${meta.threatType}** (MITRE ATT&CK: ${meta.mitre}), affecting users ${affectedUsers.join(", ")}. Immediate incident response is recommended.`
 
-  const narrative = `**Attack Timeline:**\n\nBetween ${meta.date} 23:45:54 and 23:46:23 UTC, 30 coordinated attack events were executed across ${affectedHosts.join(" and ")}. All events originated from \`powershell.exe\` with "Encoded IEX Download" technique, consistent with a staged payload delivery attack (MITRE ${meta.mitre}).\n\n**Attack Phases Identified:** ${KILL_CHAIN_PHASES[meta.mitre]?.map(p => `\`${p}\``).join(" → ")}\n\nThe threat actor likely used an encoded PowerShell invocation expression (IEX) to download secondary malware from a remote C2 endpoint, bypassing traditional AV signature detection.`
+  const narrative = `**Attack Timeline:**\n\nStarting from ${meta.date} 23:45:54 UTC, a series of ${analysis.total_threats} coordinated events was detected across internal assets. The campaign progressed from initial discovery to **${meta.threatType}** on ${affectedHosts.slice(0, 3).join(", ")}, with active persistence detected on multiple endpoints.\n\n**Attack Phases Identified:** ${KILL_CHAIN_PHASES[meta.mitre]?.map(p => `\`${p}\``).join(" → ")}\n\nForensic artifacts indicate a highly intentional intrusion set. The use of ${cat.title} (MITRE ${meta.mitre}) alongside automated lateral movement suggests a sophisticated adversary. Evidence of data staging was found on ${affectedHosts[affectedHosts.length - 1]}, indicating potential preparation for exfiltration.`
 
   const riskLevel = riskPct >= 80 ? "🔴 CRITICAL" : (riskPct >= 50 ? "🟠 HIGH" : "🟡 MEDIUM")
 
@@ -492,7 +527,7 @@ function buildMockDataset(meta: typeof DATASET_META[0]) {
     file_name: meta.file,
     total_logs: meta.totalLogs,
     total_threats: meta.totalThreats,
-    attack_chain_count: meta.computers.length,
+    attack_chain_count: meta.chainCount || meta.computers.length,
     risk_score: meta.riskScore,
     threat_density: Math.round((meta.totalThreats / meta.totalLogs) * 10000) / 100,
     generated_at: new Date(meta.date + "T23:50:00Z").toISOString(),
@@ -515,7 +550,10 @@ const UPLOAD_META = {
   riskScore: 9200,
   threatType: "Advanced Persistent Threat (APT) Detection",
   mitre: "T1059.001",
-  mitrePhase: "execution"
+  mitrePhase: "execution",
+  totalThreats: 127,
+  totalLogs: 45200,
+  chainCount: 5,
 }
 
 function genMockUploadFindings(): MockFinding[] {
@@ -597,6 +635,16 @@ function genMockUploadFindings(): MockFinding[] {
   return findings
 }
 
+function genMockUploadEvents(): MockEvent[] {
+  const ts = new Date().toISOString()
+  return [
+    { event_id: "evt-up-001", computer: "WS-PROD-99", user: "SYSTEM", process_name: "powershell.exe", detail: "Encoded IEX Download", timestamp: ts, severity: "critical" },
+    { event_id: "evt-up-002", computer: "WS-PROD-99", user: "SYSTEM", process_name: "services.exe", detail: "Malicious Service Installed", timestamp: ts, severity: "high" },
+    { event_id: "evt-up-003", computer: "WS-PROD-102", user: "jsmith", process_name: "cmd.exe", detail: "Lateral Movement via SMB", timestamp: ts, severity: "critical" },
+  ]
+}
+
+
 function buildUserUploadDataset() {
   const findings = genMockUploadFindings()
   const analysis: MockAnalysis = {
@@ -604,24 +652,15 @@ function buildUserUploadDataset() {
     file_name: UPLOAD_META.file,
     total_logs: 45200,
     total_threats: 127,
-    attack_chain_count: 1,
+    attack_chain_count: UPLOAD_META.chainCount,
     risk_score: 9200,
     threat_density: 0.8,
     generated_at: new Date().toISOString(),
     status: "completed",
   }
   
-  const chains: MockChain[] = [{
-    chain_id: "chain-upload-01",
-    chain_index: 1,
-    title: "APT Lateral Movement Chain",
-    computer: "WS-PROD-99",
-    chain_confidence: 0.94,
-    kill_chain_phases: ["initial-access", "execution", "persistence", "lateral-movement"],
-    affected_users: ["CORP\\jsmith", "SYSTEM"],
-    affected_hosts: ["WS-PROD-99", "WS-PROD-102"],
-    events: ["evt-up-001", "evt-up-002", "evt-up-003"]
-  }]
+  const chains = genChains(UPLOAD_META as any, genMockUploadEvents())
+
 
   const summary = genSummary(UPLOAD_META, analysis, findings, chains)
 
